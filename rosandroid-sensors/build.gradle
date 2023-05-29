@@ -24,9 +24,24 @@ android {
         exclude 'META-INF/LICENSE.txt'
         exclude 'META-INF/NOTICE.txt'
     }
+    sourceSets.main {
+        jniLibs.srcDir 'src/main/libs'
+        jni.srcDirs = [];
+    }
 }
 
 dependencies {
     api project(':libraries:rosandroid-core')
     implementation project(':libraries:rosandroid-core')
+}
+
+tasks.withType(JavaCompile) {
+    compileTask -> compileTask.dependsOn ndkBuild
+}
+
+task ndkBuild(type: Exec) {
+    Properties properties = new Properties()
+    properties.load(project.rootProject.file('local.properties').newDataInputStream())
+    def ndkbuild = properties.getProperty('ndk.dir', null) + "/ndk-build"
+    commandLine ndkbuild, '-C', file('src/main/jni').absolutePath
 }

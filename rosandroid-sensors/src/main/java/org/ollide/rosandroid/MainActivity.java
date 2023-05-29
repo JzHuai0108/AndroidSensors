@@ -37,8 +37,20 @@ import org.ros.android.RosActivity;
 import org.ros.node.NodeConfiguration;
 import org.ros.node.NodeMainExecutor;
 
+import org.ros.RosCore;
+
+import org.ros.rosjava_tutorial_native_node.ChatterNativeNode;
+import java.net.URI;
+
 public class MainActivity extends RosActivity implements View.OnClickListener {
     private static final String TAG = MainActivity.class.getSimpleName();
+    static {
+        System.loadLibrary("chatter_jni");
+    }
+    private NodeMainExecutor nodeMainExecutor = null;
+    private URI masterUri;
+    private String hostName;
+    private ChatterNativeNode chatterNativeNode;
 
     private EditText locationFrameIdView, imuFrameIdView;
     Button applyB;
@@ -80,6 +92,16 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
     @Override
     protected void init(NodeMainExecutor nodeMainExecutor) {
         Log.d(TAG, "init()");
+
+        // Store a reference to the NodeMainExecutor and unblock any processes that were waiting
+        // for this to start ROS Nodes
+        this.nodeMainExecutor = nodeMainExecutor;
+        masterUri = getMasterUri();
+        hostName = getRosHostname();
+
+        Log.i(TAG, "Master URI: " + masterUri.toString());
+
+        startChatter();
 
         final LocationPublisherNode locationPublisherNode = new LocationPublisherNode();
         ImuPublisherNode imuPublisherNode = new ImuPublisherNode();
@@ -196,5 +218,20 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
                 Log.e(TAG, "Permissions not granted.");
             }
         }
+    }
+
+    // Create a native chatter node
+    private void startChatter()
+    {
+        Log.i(TAG, "Starting native node wrapper...");
+
+        NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic(hostName);
+
+        nodeConfiguration.setMasterUri(masterUri);
+        nodeConfiguration.setNodeName(ChatterNativeNode.nodeName);
+
+        chatterNativeNode = new ChatterNativeNode();
+
+        nodeMainExecutor.execute(chatterNativeNode, nodeConfiguration);
     }
 }
