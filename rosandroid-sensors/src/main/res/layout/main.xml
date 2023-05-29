@@ -46,4 +46,25 @@
         android:id="@+id/b_apply"
         android:layout_marginTop="4dp"/>
 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="Master URI:"
+        android:id="@+id/tv_master_uri"
+        android:layout_gravity="left"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="Connect both the ubuntu and the android phone to the same local network.
+The android local IP address is given above. The ubuntu local IP can be found by ifconfig.
+Then in a ubuntu terminal, run \nexport ROS_MASTER_URI=http://192.168.2.134:11311 # android IP\n
+export ROS_IP=192.168.2.77 # ubuntu IP\n
+export ROS_HOSTNAME=192.168.2.77\n
+rostopic echo /imu_data\n
+Note replace the addresses accordingly. You should see a flow of IMU data."
+        android:id="@+id/help_android_roscore"
+        android:layout_gravity="left"/>
 </LinearLayout>

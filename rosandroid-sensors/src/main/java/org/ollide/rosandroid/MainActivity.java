@@ -31,6 +31,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 
 import org.ros.address.InetAddressFactory;
 import org.ros.android.RosActivity;
@@ -53,6 +54,7 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
     private ChatterNativeNode chatterNativeNode;
 
     private EditText locationFrameIdView, imuFrameIdView;
+    private TextView masterUriTextView;
     Button applyB;
     private OnFrameIdChangeListener locationFrameIdListener, imuFrameIdListener;
 
@@ -80,6 +82,7 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
 
         locationFrameIdView = findViewById(R.id.et_location_frame_id);
         imuFrameIdView = findViewById(R.id.et_imu_frame_id);
+        masterUriTextView = findViewById(R.id.tv_master_uri);
 
         SharedPreferences sp = getSharedPreferences("SharedPreferences", MODE_PRIVATE);
         locationFrameIdView.setText(sp.getString("locationFrameId", getString(R.string.default_location_frame_id)));
@@ -100,7 +103,6 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
         hostName = getRosHostname();
 
         Log.i(TAG, "Master URI: " + masterUri.toString());
-
         startChatter();
 
         final LocationPublisherNode locationPublisherNode = new LocationPublisherNode();
@@ -143,6 +145,7 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
                 } else {
                     locationManager.requestLocationUpdates(provider, t, distance, locationPublisherNode.getLocationListener());
                 }
+                masterUriTextView.setText("Master URI:" + masterUri.toString());
             }
         });
 
