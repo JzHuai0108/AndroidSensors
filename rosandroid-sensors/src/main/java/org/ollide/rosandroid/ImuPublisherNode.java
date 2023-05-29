@@ -65,13 +65,13 @@ public class ImuPublisherNode extends AbstractNodeMain {
             @Override
             public void onSensorChanged(SensorEvent sensorEvent) {
                 if (!(
-                        aRoll == -sensorEvent.values[1] &&
-                        aPitch == -sensorEvent.values[2] &&
-                        aYaw == sensorEvent.values[0]
+                        aRoll == sensorEvent.values[0] &&
+                        aPitch == sensorEvent.values[1] &&
+                        aYaw == sensorEvent.values[2]
                 )) {
-                    aRoll = -sensorEvent.values[1];
-                    aPitch = -sensorEvent.values[2];
-                    aYaw = sensorEvent.values[0];
+                    aRoll = sensorEvent.values[0];
+                    aPitch = sensorEvent.values[1];
+                    aYaw = sensorEvent.values[2];
                     isGyroscopeMessagePending = true;
                 }
             }
@@ -137,20 +137,9 @@ public class ImuPublisherNode extends AbstractNodeMain {
                     imuMessage.getLinearAcceleration().setY(ay);
                     imuMessage.getLinearAcceleration().setZ(az);
 
-                    float dt = (currentTimeMillis - previousPublishTime) / 1000.f;
-                    float dRoll = (roll - prevRoll);
-                    if (dRoll > 180)
-                        dRoll = 360 - dRoll;
-                    float dPitch = (pitch - prevPitch);
-                    if (dPitch > 180)
-                        dPitch = 360 - dPitch;
-                    float dYaw = (yaw - prevYaw);
-                    if (dYaw > 180)
-                        dYaw = 360 - dYaw;
-
-                    imuMessage.getAngularVelocity().setX(dRoll / dt);
-                    imuMessage.getAngularVelocity().setY(dPitch / dt);
-                    imuMessage.getAngularVelocity().setZ(dYaw / dt);
+                    imuMessage.getAngularVelocity().setX(aRoll);
+                    imuMessage.getAngularVelocity().setY(aPitch);
+                    imuMessage.getAngularVelocity().setZ(aYaw);
 
                     prevRoll = roll;
                     prevPitch = pitch;

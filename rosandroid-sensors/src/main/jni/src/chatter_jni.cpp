@@ -3,6 +3,7 @@
 
 #include "chatter_jni.h"
 
+#include "sensor_msgs/Imu.h"
 #include "std_msgs/String.h"
 #include <sstream>
 
@@ -23,11 +24,25 @@ inline string stdStringFromjString(JNIEnv *env, jstring java_string) {
 }
 
 bool running;
+int loop_count_ = 0;
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
     log("Library has been loaded");
     // Return the JNI version
     return JNI_VERSION_1_6;
+}
+
+void imuCallback(const sensor_msgs::ImuConstPtr& msg) {
+    // ROS_INFO("%s", msg->data.c_str());
+    loop_count_++;
+    std_msgs::String msgo;
+    std::stringstream ss;
+    ss << "IMU data " << loop_count_ << " from ndk: ax: "
+        << msg->linear_acceleration.x << ", ay: "
+        << msg->linear_acceleration.y << ", az: "
+        << msg->linear_acceleration.z << "." ;
+    msgo.data = ss.str();
+    log(msgo.data.c_str());
 }
 
 JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_ChatterNativeNode_execute(
@@ -81,8 +96,8 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_ChatterNativ
 
     ros::NodeHandle n;
     ros::Publisher chatter_pub = n.advertise<std_msgs::String>("chatter", 1000);
-
-    ros::Rate loop_rate(1);
+    ros::Subscriber sub = n.subscribe("imu_data", 100, imuCallback);
+    ros::Rate loop_rate(5);
 
     int count = 0;
     while (ros::ok()) {
@@ -90,11 +105,9 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_ChatterNativ
          * This is a message object. You stuff it with data, and then publish it.
          */
         std_msgs::String msg;
-
         std::stringstream ss;
         ss << "hello world " << count;
         msg.data = ss.str();
-
         ROS_INFO("%s", msg.data.c_str());
 
         /**
@@ -106,7 +119,6 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_ChatterNativ
         chatter_pub.publish(msg);
 
         ros::spinOnce();
-
         loop_rate.sleep();
         ++count;
     }
