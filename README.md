@@ -47,6 +47,14 @@ cd /media/jhuai/docker/roscpp_android_ndk/ros_android/output/roscpp_android_ndk
 ndk-build
 ```
 
+Now download rosandroid-sensors, and configure the ndk directory in
+./AndroidSensors/local.properties
+```
+sdk.dir=/home/jhuai/Android/Sdk
+ndk.dir=/home/jhuai/Android/android-ndk-r18b
+```
+
+
 4. Build the chatter_jni.so
 ```
 # In a terminal
@@ -69,7 +77,9 @@ The jni folder's structure is
 /roscpp_android_ndk/AndroidSensors/rosandroid-sensors/src/main/jniLibs/arm64-v8a/.
 
 Then build the apk in Android studio. Run the app on an Android phone.
-Check show advanced options. Click New public master.
+Connect to a local (private) WiFi network. A public WiFi network may not work.
+Clicking wlan0 in the Select network interface is optional.
+Then, check show advanced options. Click New public master.
 
 6. Connect to android roscore
 Android Public master URI can be found in logcat, e.g., http://192.168.2.134:11311/
