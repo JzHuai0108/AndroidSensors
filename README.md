@@ -31,10 +31,10 @@ compile, therefore you can not only use Ubuntu but also Windows or Mac.
 1. Build [ros_android](https://github.com/JzHuai0108/roscpp_android.git).
 branch kinetic.
 
-2. *This step can be skipped.* create the header chatter_jni.h for the ChatterNativeNode java class.
+2. *This step can be skipped.* create the header chatter_jni.h for the MoveBaseNativeNode java class.
 Following instructions [here](http://wiki.ros.org/android_ndk/Tutorials/WrappingNativeRosjavaNode).
 ```
-javac -h . -cp .:/home/jhuai/.gradle/caches/modules-2/files-2.1/org.ros.rosjava_core/rosjava/0.3.5/7320e6ff76abf066da6850f44f3dcb05f890e043/rosjava-0.3.5.jar /media/jhuai/docker/roscpp_android_ndk/AndroidSensors/rosandroid-sensors/src/main/java/org/ros/rosjava_tutorial_native_node/ChatterNativeNode.java
+javac -h . -cp .:/home/jhuai/.gradle/caches/modules-2/files-2.1/org.ros.rosjava_core/rosjava/0.3.5/7320e6ff76abf066da6850f44f3dcb05f890e043/rosjava-0.3.5.jar /media/jhuai/docker/roscpp_android_ndk/AndroidSensors/rosandroid-sensors/src/main/java/org/ros/rosjava_tutorial_native_node/MoveBaseNativeNode.java
 ```
 
 3. Setup and build the roscpp_android_ndk static library

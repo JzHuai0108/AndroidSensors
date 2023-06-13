@@ -1,20 +1,20 @@
 package org.ros.rosjava_tutorial_native_node;
 
-import org.ros.node.NativeNodeMain;
 import org.ros.namespace.GraphName;
+import org.ros.node.NativeNodeMain;
 
 /**
- * Class to implement a chatter native node.
+ * Class to implement a polar scan matcher native node.
  **/
-public class ChatterNativeNode extends NativeNodeMain {
-    private static final String libName = "chatter_jni";
-    public static final String nodeName = "chatter";
+public class PsmNativeNode extends NativeNodeMain {
+    private static final String libName = "movebase_jni";
+    public static final String nodeName = "psm";
 
-    public ChatterNativeNode() {
+    public PsmNativeNode() {
         super(libName);
     }
 
-    public ChatterNativeNode(String[] remappingArguments) {
+    public PsmNativeNode(String[] remappingArguments) {
         super(libName, remappingArguments);
     }
 

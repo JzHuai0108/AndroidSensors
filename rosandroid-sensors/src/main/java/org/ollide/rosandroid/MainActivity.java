@@ -40,19 +40,21 @@ import org.ros.node.NodeMainExecutor;
 
 import org.ros.RosCore;
 
-import org.ros.rosjava_tutorial_native_node.ChatterNativeNode;
+import org.ros.rosjava_tutorial_native_node.MoveBaseNativeNode;
+import org.ros.rosjava_tutorial_native_node.PsmNativeNode;
 import java.net.URI;
 
 public class MainActivity extends RosActivity implements View.OnClickListener {
     private static final String TAG = MainActivity.class.getSimpleName();
     static {
-        System.loadLibrary("chatter_jni");
+        System.loadLibrary("movebase_jni");
     }
     private NodeMainExecutor nodeMainExecutor = null;
     private URI masterUri;
     private String hostName;
-    private ChatterNativeNode chatterNativeNode;
+    private MoveBaseNativeNode moveBaseNativeNode;
 
+    private PsmNativeNode psmNativeNode;
     private EditText locationFrameIdView, imuFrameIdView;
     private TextView masterUriTextView;
     Button applyB;
@@ -103,7 +105,8 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
         hostName = getRosHostname();
 
         Log.i(TAG, "Master URI: " + masterUri.toString());
-        startChatter();
+        startMoveBase();
+        startPsm();
 
         final LocationPublisherNode locationPublisherNode = new LocationPublisherNode();
         ImuPublisherNode imuPublisherNode = new ImuPublisherNode();
@@ -223,18 +226,29 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
         }
     }
 
-    // Create a native chatter node
-    private void startChatter()
+    // Create a native movebase node
+    private void startMoveBase()
     {
-        Log.i(TAG, "Starting native node wrapper...");
+        Log.i(TAG, "Starting native movebase node wrapper...");
 
         NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic(hostName);
 
         nodeConfiguration.setMasterUri(masterUri);
-        nodeConfiguration.setNodeName(ChatterNativeNode.nodeName);
+        nodeConfiguration.setNodeName(MoveBaseNativeNode.nodeName);
 
-        chatterNativeNode = new ChatterNativeNode();
+        moveBaseNativeNode = new MoveBaseNativeNode();
+        nodeMainExecutor.execute(moveBaseNativeNode, nodeConfiguration);
+    }
 
-        nodeMainExecutor.execute(chatterNativeNode, nodeConfiguration);
+    private void startPsm() {
+        Log.i(TAG, "Starting native Psm node wrapper...");
+
+        NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic(hostName);
+
+        nodeConfiguration.setMasterUri(masterUri);
+        nodeConfiguration.setNodeName(PsmNativeNode.nodeName);
+
+        psmNativeNode = new PsmNativeNode();
+        nodeMainExecutor.execute(psmNativeNode, nodeConfiguration);
     }
 }

@@ -1,7 +1,7 @@
 #include <android/log.h>
 #include <ros/ros.h>
 
-#include "chatter_jni.h"
+#include "psm_jni.h"
 #include "psm_node.h"
 
 #include "sensor_msgs/Imu.h"
@@ -10,28 +10,14 @@
 
 using namespace std;
 
-void log(const char *msg, ...) {
-    va_list args;
-    va_start(args, msg);
-    __android_log_vprint(ANDROID_LOG_INFO, "Native_Chatter", msg, args);
-    va_end(args);
-}
+extern void log(const char *msg, ...);
 
-inline string stdStringFromjString(JNIEnv *env, jstring java_string) {
-    const char *tmp = env->GetStringUTFChars(java_string, NULL);
-    string out(tmp);
-    env->ReleaseStringUTFChars(java_string, tmp);
-    return out;
-}
+extern inline string stdStringFromjString(JNIEnv *env, jstring java_string);
 
-bool running;
+
 int loop_count_ = 0;
 
-JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
-    log("Library has been loaded");
-    // Return the JNI version
-    return JNI_VERSION_1_6;
-}
+extern JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved);
 
 void poseCallback(const geometry_msgs::Pose2DConstPtr& msg) {
     // ROS_INFO("%s", msg->data.c_str());
@@ -46,11 +32,10 @@ void poseCallback(const geometry_msgs::Pose2DConstPtr& msg) {
     log(msgo.data.c_str());
 }
 
-JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_ChatterNativeNode_execute(
+JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_PsmNativeNode_execute(
         JNIEnv *env, jobject obj, jstring rosMasterUri, jstring rosHostname, jstring rosNodeName,
         jobjectArray remappingArguments) {
-    log("Native chatter node started.");
-    running = true;
+    log("Native psm node started.");
 
     string master("__master:=" + stdStringFromjString(env, rosMasterUri));
     string hostname("__ip:=" + stdStringFromjString(env, rosHostname));
@@ -64,7 +49,7 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_ChatterNativ
     jsize len = env->GetArrayLength(remappingArguments);
     log("After reading size");
 
-    std::string ni = "chatter_jni";
+    std::string ni = "psm_jni";
 
     int argc = 0;
     const int static_params = 4;
@@ -95,10 +80,10 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_ChatterNativ
     delete refs;
     delete argv;
 
-    ros::NodeHandle n;
+    ros::NodeHandle n("psm_chat");
     ros::Publisher chatter_pub = n.advertise<std_msgs::String>("chatter", 1000);
     ros::Subscriber sub = n.subscribe("pose2D", 100, poseCallback);
-    ros::Rate loop_rate(5);
+    ros::Rate loop_rate(100);
 
     PSMNode psmNode;
 
@@ -109,7 +94,7 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_ChatterNativ
          */
         std_msgs::String msg;
         std::stringstream ss;
-        ss << "hello world " << count;
+        ss << "psm hello world " << count;
         msg.data = ss.str();
         ROS_INFO("%s", msg.data.c_str());
 
@@ -130,10 +115,9 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_ChatterNativ
     return 0;
 }
 
-JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_ChatterNativeNode_shutdown
+JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_PsmNativeNode_shutdown
         (JNIEnv *, jobject) {
     log("Shutting down native node.");
     ros::shutdown();
-    running = false;
     return 0;
 }
