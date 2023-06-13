@@ -10,7 +10,7 @@ LOCAL_MODULE    := chatter_jni
 LOCAL_CFLAGS    := -std=c++11 -g -O0 -DDEBUG
 LOCAL_CPPFLAGS  := -isystem
 LOCAL_CPP_FEATURES := exceptions
-LOCAL_SRC_FILES := $(LOCAL_PATH)/src/chatter_jni.cpp
+LOCAL_SRC_FILES := $(LOCAL_PATH)/src/chatter_jni.cpp $(LOCAL_PATH)/src/psm_singleton.cpp
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
 LOCAL_LDFLAGS := -Wl,--exclude-libs,libgcc.a -Wl,--exclude-libs,libgnustl_shared.so
 LOCAL_LDLIBS := -landroid -llog

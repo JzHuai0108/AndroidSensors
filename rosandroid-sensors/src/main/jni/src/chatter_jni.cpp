@@ -2,6 +2,7 @@
 #include <ros/ros.h>
 
 #include "chatter_jni.h"
+#include "psm_node.h"
 
 #include "sensor_msgs/Imu.h"
 #include "std_msgs/String.h"
@@ -32,15 +33,15 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
     return JNI_VERSION_1_6;
 }
 
-void imuCallback(const sensor_msgs::ImuConstPtr& msg) {
+void poseCallback(const geometry_msgs::Pose2DConstPtr& msg) {
     // ROS_INFO("%s", msg->data.c_str());
     loop_count_++;
     std_msgs::String msgo;
     std::stringstream ss;
-    ss << "IMU data " << loop_count_ << " from ndk: ax: "
-        << msg->linear_acceleration.x << ", ay: "
-        << msg->linear_acceleration.y << ", az: "
-        << msg->linear_acceleration.z << "." ;
+    ss << "Pose2D data " << loop_count_ << " from ndk: x: "
+        << msg->x << ", y: "
+        << msg->y << ", theta: "
+        << msg->theta << "." ;
     msgo.data = ss.str();
     log(msgo.data.c_str());
 }
@@ -96,8 +97,10 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_ChatterNativ
 
     ros::NodeHandle n;
     ros::Publisher chatter_pub = n.advertise<std_msgs::String>("chatter", 1000);
-    ros::Subscriber sub = n.subscribe("imu_data", 100, imuCallback);
+    ros::Subscriber sub = n.subscribe("pose2D", 100, poseCallback);
     ros::Rate loop_rate(5);
+
+    PSMNode psmNode;
 
     int count = 0;
     while (ros::ok()) {
