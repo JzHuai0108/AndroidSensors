@@ -1,7 +1,10 @@
 package org.ros.rosjava_tutorial_native_node;
 
+import org.apache.commons.logging.Log;
 import org.ros.node.NativeNodeMain;
 import org.ros.namespace.GraphName;
+import org.ros.node.ConnectedNode;
+import org.ros.node.Node;
 
 /**
  * Class to implement a movebase native node.
@@ -9,6 +12,7 @@ import org.ros.namespace.GraphName;
 public class MoveBaseNativeNode extends NativeNodeMain {
     private static final String libName = "movebase_jni";
     public static final String nodeName = "movebase";
+    private Log mLog;
 
     public MoveBaseNativeNode() {
         super(libName);
@@ -28,4 +32,17 @@ public class MoveBaseNativeNode extends NativeNodeMain {
 
     @Override
     protected native int shutdown();
+
+    @Override
+    public void onStart(ConnectedNode connectedNode) {
+        mLog = connectedNode.getLog();
+        super.onStart(connectedNode);
+    }
+
+    @Override
+    public void onError(Node node, Throwable throwable) {
+        if (super.executeReturnCode != 0 && mLog != null) {
+            mLog.error("MoveBaseNativeNode error code: " + Integer.toString(super.executeReturnCode), throwable);
+        }
+    }
 }

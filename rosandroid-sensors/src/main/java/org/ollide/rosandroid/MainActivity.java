@@ -48,6 +48,7 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
     private static final String TAG = MainActivity.class.getSimpleName();
     static {
         System.loadLibrary("movebase_jni");
+        System.loadLibrary("psm_jni");
     }
     private NodeMainExecutor nodeMainExecutor = null;
     private URI masterUri;

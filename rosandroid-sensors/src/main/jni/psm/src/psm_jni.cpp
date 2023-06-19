@@ -1,9 +1,10 @@
 #include <android/log.h>
 #include <ros/ros.h>
 
-#include "movebase_jni.h"
-#include <move_base/move_base.h>
+#include "psm_jni.h"
+#include "psm_node.h"
 
+#include "sensor_msgs/Imu.h"
 #include "std_msgs/String.h"
 #include <sstream>
 
@@ -12,7 +13,7 @@ using namespace std;
 void log(const char *msg, ...) {
     va_list args;
     va_start(args, msg);
-    __android_log_vprint(ANDROID_LOG_INFO, "Native_MoveBase", msg, args);
+    __android_log_vprint(ANDROID_LOG_INFO, "Native_Psm", msg, args);
     va_end(args);
 }
 
@@ -23,19 +24,31 @@ inline string stdStringFromjString(JNIEnv *env, jstring java_string) {
     return out;
 }
 
-bool running;
+int loop_count_ = 0;
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
-    log("Library has been loaded");
+    log("PSM library has been loaded");
     // Return the JNI version
     return JNI_VERSION_1_6;
 }
 
-JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_MoveBaseNativeNode_execute(
+void cmdVelCallback(const geometry_msgs::TwistConstPtr& msg) {
+    // ROS_INFO("%s", msg->data.c_str());
+    loop_count_++;
+    std_msgs::String msgo;
+    std::stringstream ss;
+    ss << "Cmd vel data " << loop_count_ << " from ndk: lx: "
+        << msg->linear.x << ", ly: "
+        << msg->linear.y << ", lz: "
+        << msg->linear.z << "." ;
+    msgo.data = ss.str();
+    log(msgo.data.c_str());
+}
+
+JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_PsmNativeNode_execute(
         JNIEnv *env, jobject obj, jstring rosMasterUri, jstring rosHostname, jstring rosNodeName,
         jobjectArray remappingArguments) {
-    log("Native movebase node started.");
-    running = true;
+    log("Native psm node started.");
 
     string master("__master:=" + stdStringFromjString(env, rosMasterUri));
     string hostname("__ip:=" + stdStringFromjString(env, rosHostname));
@@ -43,13 +56,14 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_MoveBaseNati
 
     log(master.c_str());
     log(hostname.c_str());
-
+    string nnmsg = "psm native nodename " + node_name;
+    log(nnmsg.c_str());
     // Parse remapping arguments
     log("Before getting size");
     jsize len = env->GetArrayLength(remappingArguments);
     log("After reading size");
 
-    std::string ni = "movebase_jni";
+    std::string ni = "psm_cpp";
 
     int argc = 0;
     const int static_params = 4;
@@ -80,14 +94,12 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_MoveBaseNati
     delete refs;
     delete argv;
 
-    ros::NodeHandle n("mb_chat");
-    ros::Publisher chatter_pub = n.advertise<std_msgs::String>("chatter", 1000);
-    ros::Rate loop_rate(30);
+    PSMNode psmNode;
 
-    tf::TransformListener tf(ros::Duration(10));
-    log("movebase starting.");
-    move_base::MoveBase move_base(tf);
-    log("movebase running.");
+    ros::NodeHandle n;
+    ros::Publisher chatter_pub = n.advertise<std_msgs::String>("psm_chatter", 1000);
+    ros::Subscriber sub = n.subscribe("cmd_vel", 100, cmdVelCallback);
+    ros::Rate loop_rate(100);
 
     int count = 0;
     while (ros::ok()) {
@@ -96,7 +108,7 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_MoveBaseNati
          */
         std_msgs::String msg;
         std::stringstream ss;
-        ss << "movebase hello world " << count;
+        ss << "psm hello world " << count;
         msg.data = ss.str();
         ROS_INFO("%s", msg.data.c_str());
 
@@ -117,10 +129,9 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_MoveBaseNati
     return 0;
 }
 
-JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_MoveBaseNativeNode_shutdown
+JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_PsmNativeNode_shutdown
         (JNIEnv *, jobject) {
     log("Shutting down native node.");
     ros::shutdown();
-    running = false;
     return 0;
 }

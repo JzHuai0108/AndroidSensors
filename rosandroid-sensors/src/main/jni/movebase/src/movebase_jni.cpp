@@ -1,41 +1,41 @@
 #include <android/log.h>
 #include <ros/ros.h>
 
-#include "psm_jni.h"
-#include "psm_node.h"
+#include "movebase_jni.h"
+#include <move_base/move_base.h>
 
-#include "sensor_msgs/Imu.h"
 #include "std_msgs/String.h"
 #include <sstream>
 
 using namespace std;
 
-extern void log(const char *msg, ...);
-
-extern inline string stdStringFromjString(JNIEnv *env, jstring java_string);
-
-
-int loop_count_ = 0;
-
-extern JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved);
-
-void poseCallback(const geometry_msgs::Pose2DConstPtr& msg) {
-    // ROS_INFO("%s", msg->data.c_str());
-    loop_count_++;
-    std_msgs::String msgo;
-    std::stringstream ss;
-    ss << "Pose2D data " << loop_count_ << " from ndk: x: "
-        << msg->x << ", y: "
-        << msg->y << ", theta: "
-        << msg->theta << "." ;
-    msgo.data = ss.str();
-    log(msgo.data.c_str());
+void log(const char *msg, ...) {
+    va_list args;
+    va_start(args, msg);
+    __android_log_vprint(ANDROID_LOG_INFO, "Native_MoveBase", msg, args);
+    va_end(args);
 }
 
-JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_PsmNativeNode_execute(
+inline string stdStringFromjString(JNIEnv *env, jstring java_string) {
+    const char *tmp = env->GetStringUTFChars(java_string, NULL);
+    string out(tmp);
+    env->ReleaseStringUTFChars(java_string, tmp);
+    return out;
+}
+
+bool running;
+
+JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
+    log("Movebase library has been loaded");
+    // Return the JNI version
+    return JNI_VERSION_1_6;
+}
+
+JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_MoveBaseNativeNode_execute(
         JNIEnv *env, jobject obj, jstring rosMasterUri, jstring rosHostname, jstring rosNodeName,
         jobjectArray remappingArguments) {
-    log("Native psm node started.");
+    log("Native movebase node started.");
+    running = true;
 
     string master("__master:=" + stdStringFromjString(env, rosMasterUri));
     string hostname("__ip:=" + stdStringFromjString(env, rosHostname));
@@ -43,13 +43,15 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_PsmNativeNod
 
     log(master.c_str());
     log(hostname.c_str());
+    string nnmsg = "movebase native nodename " + node_name;
+    log(nnmsg.c_str());
 
     // Parse remapping arguments
     log("Before getting size");
     jsize len = env->GetArrayLength(remappingArguments);
     log("After reading size");
 
-    std::string ni = "psm_jni";
+    std::string ni = "movebase_cpp";
 
     int argc = 0;
     const int static_params = 4;
@@ -80,12 +82,14 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_PsmNativeNod
     delete refs;
     delete argv;
 
-    ros::NodeHandle n("psm_chat");
-    ros::Publisher chatter_pub = n.advertise<std_msgs::String>("chatter", 1000);
-    ros::Subscriber sub = n.subscribe("pose2D", 100, poseCallback);
-    ros::Rate loop_rate(100);
+    ros::NodeHandle n;
+    ros::Publisher chatter_pub = n.advertise<std_msgs::String>("mb_chatter", 1000);
+    ros::Rate loop_rate(30);
 
-    PSMNode psmNode;
+    tf::TransformListener tf(ros::Duration(10));
+    log("movebase starting.");
+    move_base::MoveBase move_base(tf);
+    log("movebase running.");
 
     int count = 0;
     while (ros::ok()) {
@@ -94,7 +98,7 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_PsmNativeNod
          */
         std_msgs::String msg;
         std::stringstream ss;
-        ss << "psm hello world " << count;
+        ss << "movebase hello world " << count;
         msg.data = ss.str();
         ROS_INFO("%s", msg.data.c_str());
 
@@ -115,9 +119,10 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_PsmNativeNod
     return 0;
 }
 
-JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_PsmNativeNode_shutdown
+JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_MoveBaseNativeNode_shutdown
         (JNIEnv *, jobject) {
     log("Shutting down native node.");
     ros::shutdown();
+    running = false;
     return 0;
 }
