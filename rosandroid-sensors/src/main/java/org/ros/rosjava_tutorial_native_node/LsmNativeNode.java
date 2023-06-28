@@ -1,24 +1,23 @@
 package org.ros.rosjava_tutorial_native_node;
 
 import org.apache.commons.logging.Log;
-import org.ros.node.NativeNodeMain;
 import org.ros.namespace.GraphName;
 import org.ros.node.ConnectedNode;
+import org.ros.node.NativeNodeMain;
 import org.ros.node.Node;
 
 /**
- * Class to implement a movebase native node.
+ * Class to implement a polar scan matcher native node.
  **/
-public class MoveBaseNativeNode extends NativeNodeMain {
-    private static final String libName = "movebase_jni";
-    public static final String nodeName = "move_base";
+public class LsmNativeNode extends NativeNodeMain {
+    private static final String libName = "lsm_jni";
+    public static final String nodeName = "laser_scan_matcher_node";
     private Log mLog;
-
-    public MoveBaseNativeNode() {
+    public LsmNativeNode() {
         super(libName);
     }
 
-    public MoveBaseNativeNode(String[] remappingArguments) {
+    public LsmNativeNode(String[] remappingArguments) {
         super(libName, remappingArguments);
     }
 
@@ -42,7 +41,7 @@ public class MoveBaseNativeNode extends NativeNodeMain {
     @Override
     public void onError(Node node, Throwable throwable) {
         if (super.executeReturnCode != 0 && mLog != null) {
-            mLog.error("MoveBaseNativeNode error code: " + Integer.toString(super.executeReturnCode), throwable);
+            mLog.error("LaserScanMatcherNativeNode error code: " + Integer.toString(super.executeReturnCode), throwable);
         }
     }
 }

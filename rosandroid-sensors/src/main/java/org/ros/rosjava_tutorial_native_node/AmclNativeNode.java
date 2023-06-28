@@ -9,15 +9,15 @@ import org.ros.node.Node;
 /**
  * Class to implement a polar scan matcher native node.
  **/
-public class PsmNativeNode extends NativeNodeMain {
-    private static final String libName = "psm_jni";
-    public static final String nodeName = "psm";
+public class AmclNativeNode extends NativeNodeMain {
+    private static final String libName = "amcl_jni";
+    public static final String nodeName = "amcl";
     private Log mLog;
-    public PsmNativeNode() {
+    public AmclNativeNode() {
         super(libName);
     }
 
-    public PsmNativeNode(String[] remappingArguments) {
+    public AmclNativeNode(String[] remappingArguments) {
         super(libName, remappingArguments);
     }
 
@@ -41,7 +41,7 @@ public class PsmNativeNode extends NativeNodeMain {
     @Override
     public void onError(Node node, Throwable throwable) {
         if (super.executeReturnCode != 0 && mLog != null) {
-            mLog.error("MoveBaseNativeNode error code: " + Integer.toString(super.executeReturnCode), throwable);
+            mLog.error("AMCLNativeNode error code: " + Integer.toString(super.executeReturnCode), throwable);
         }
     }
 }

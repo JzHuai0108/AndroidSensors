@@ -1,0 +1,7 @@
+# image: /media/jhuai/docker/roscpp_android_ndk/catkin_ws/data/ls_m10_909/06132100.pgm
+image: lsm10_909_06132100_img.pgm
+resolution: 0.05
+origin: [-8.62729, -7.22184, 0.0]
+negate: 0
+occupied_thresh: 0.65
+free_thresh: 0.196

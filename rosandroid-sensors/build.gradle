@@ -33,6 +33,12 @@ android {
 dependencies {
     api project(':libraries:rosandroid-core')
     implementation project(':libraries:rosandroid-core')
+
+    implementation 'org.ros.rosjava_core:rosjava_helpers:[0.3, 0.4)'
+    // External libraries
+    implementation 'com.hoho.android:usb-serial-for-android:[0.2, 0.3)'
+    // Android libraries
+    implementation 'com.android.support:support-v4:26.0.1'
 }
 
 tasks.withType(JavaCompile) {

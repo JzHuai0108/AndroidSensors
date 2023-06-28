@@ -12,3 +12,5 @@ local.properties
 rosandroid-sensors/src/main/libs/arm64-v8a/
 
 rosandroid-sensors/src/main/obj/local/arm64-v8a/
+
+rosandroid-sensors/src/main/obj/local/armeabi-v7a/

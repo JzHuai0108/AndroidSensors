@@ -4,8 +4,21 @@
 #include "movebase_jni.h"
 #include <move_base/move_base.h>
 
+/*robot_state_publisher headers begin*/
+#include <urdf/model.h>
+#include <kdl/tree.hpp>
+#include <kdl_parser/kdl_parser.hpp>
+
+#include "robot_state_publisher/robot_state_publisher.h"
+#include "robot_state_publisher/joint_state_listener.h"
+/*robot_state_publisher headers end*/
+
+#include "map_server/map_server.h"
+
 #include "std_msgs/String.h"
+#include <tf2_ros/transform_listener.h>
 #include <sstream>
+#include <fstream>
 
 using namespace std;
 
@@ -69,6 +82,8 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_MoveBaseNati
         argv[argc] = refs[i];
         argc++;
     }
+    std::string urdf_filename((char *) env->GetStringUTFChars((jstring) env->GetObjectArrayElement(remappingArguments, 0), NULL));
+    std::string map_yaml((char *) env->GetStringUTFChars((jstring) env->GetObjectArrayElement(remappingArguments, 1), NULL));
 
     log("Initiating ROS...");
     ros::init(argc, &argv[0], node_name.c_str());
@@ -82,13 +97,70 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_MoveBaseNati
     delete refs;
     delete argv;
 
-    ros::NodeHandle n;
-    ros::Publisher chatter_pub = n.advertise<std_msgs::String>("mb_chatter", 1000);
+    ros::NodeHandle nh;
+    nh.setParam("/robot_state_publisher/publish_frequency", 50.0);
+    nh.setParam("/robot_state_publisher/tf_prefix", "");
+
+    // startRobotStatePublisher
+    std::ifstream in(urdf_filename, std::ios::in | std::ios::binary);
+    if (!in.good()) {
+        ROS_ERROR("Failed to open urdf file %s.", urdf_filename.c_str());
+        return -1;
+    }
+    in.seekg(0, std::ios::end);
+    std::string urdf_xml;
+    urdf_xml.resize(in.tellg());
+    in.seekg(0, std::ios::beg);
+    in.read(&urdf_xml[0], urdf_xml.size());
+    in.close();
+    nh.setParam("robot_description", urdf_xml);
+
+    urdf::Model model;
+    if (!model.initParam("robot_description")) {
+        ROS_ERROR("Failed to init model from robot_description");
+        return -1;
+    }
+
+    KDL::Tree tree;
+    if (!kdl_parser::treeFromUrdfModel(model, tree)) {
+        ROS_ERROR("Failed to extract kdl tree from xml robot description");
+        return -1;
+    }
+
+    MimicMap mimic;
+
+    for(std::map< std::string, urdf::JointSharedPtr >::iterator i = model.joints_.begin(); i != model.joints_.end(); i++) {
+        if(i->second->mimic) {
+        mimic.insert(make_pair(i->first, i->second->mimic));
+        }
+    }
+
+    robot_state_publisher::JointStateListener state_publisher(tree, mimic, model);
+
+    // start map server
+    std::ifstream map_in(map_yaml, std::ios::in | std::ios::binary);
+    if (!map_in.good()) {
+        ROS_ERROR("Failed to open map yaml %s.", map_yaml.c_str());
+        return -1;
+    } else {
+        ROS_INFO("Map yaml %s is good", map_yaml.c_str());
+    }
+    double res = 0.0;
+    MapServer ms(map_yaml, res);
+
+    ros::Publisher chatter_pub = nh.advertise<std_msgs::String>("mb_chatter", 1000);
     ros::Rate loop_rate(30);
 
-    tf::TransformListener tf(ros::Duration(10));
+    nh.setParam("/move_base/base_local_planner", "dwa_local_planner/DWAPlannerROS");
+    nh.setParam("/move_base/aggressive_reset/reset_distance", 1.84);
+    nh.setParam("/move_base/base_global_planner", "navfn/NavfnROS");
+    nh.setParam("/move_base/clearing_rotation_allowed", true);
+    nh.setParam("/move_base/conservative_reset/reset_distance", 3.0);
+
+    tf2_ros::Buffer buffer(ros::Duration(10));
+    tf2_ros::TransformListener tf(buffer);
     log("movebase starting.");
-    move_base::MoveBase move_base(tf);
+    move_base::MoveBase move_base(buffer);
     log("movebase running.");
 
     int count = 0;

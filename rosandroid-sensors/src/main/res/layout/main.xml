@@ -46,6 +46,33 @@
         android:id="@+id/b_apply"
         android:layout_marginTop="4dp"/>
 
+
+    <TextView
+        android:id="@+id/is_config_ok_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Configuration "
+        android:textSize="20sp" />
+
+    <ImageView
+        android:id="@+id/is_config_ok_image"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_highlight_off_black_24dp" />
+
+    <TextView
+        android:id="@+id/is_navigation_ok_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Navigation "
+        android:textSize="20sp" />
+
+    <ImageView
+        android:id="@+id/is_navigation_ok_image"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_highlight_off_black_24dp" />
+
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

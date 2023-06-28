@@ -26,36 +26,71 @@ import android.location.Criteria;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.v4.content.ContextCompat;
+import android.os.Environment;
 import android.util.Log;
+import android.util.Pair;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import org.ros.address.InetAddressFactory;
 import org.ros.android.RosActivity;
+import org.ros.helpers.ParameterLoaderNode;
+import org.ros.node.ConnectedNode;
+import org.ros.node.DefaultNodeListener;
+import org.ros.node.Node;
 import org.ros.node.NodeConfiguration;
 import org.ros.node.NodeMainExecutor;
-
-import org.ros.RosCore;
+import org.ros.node.NodeListener;
 
 import org.ros.rosjava_tutorial_native_node.MoveBaseNativeNode;
-import org.ros.rosjava_tutorial_native_node.PsmNativeNode;
+import org.ros.rosjava_tutorial_native_node.LsmNativeNode;
+import org.ros.rosjava_tutorial_native_node.AmclNativeNode;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.concurrent.CountDownLatch;
 
 public class MainActivity extends RosActivity implements View.OnClickListener {
     private static final String TAG = MainActivity.class.getSimpleName();
     static {
         System.loadLibrary("movebase_jni");
-        System.loadLibrary("psm_jni");
+        System.loadLibrary("lsm_jni");
+        System.loadLibrary("amcl_jni");
     }
+
+    private static ArrayList<Pair<Integer, String>> mResourcesToLoad = new ArrayList<Pair<Integer, String>>() {{
+        add(new Pair<>(R.raw.costmap_common_params_burger, MoveBaseNativeNode.nodeName + "/local_costmap"));
+        add(new Pair<>(R.raw.costmap_common_params_burger, MoveBaseNativeNode.nodeName + "/global_costmap"));
+        add(new Pair<>(R.raw.local_costmap_params, MoveBaseNativeNode.nodeName + "/local_costmap"));
+        add(new Pair<>(R.raw.global_costmap_params, MoveBaseNativeNode.nodeName + "/global_costmap"));
+        add(new Pair<>(R.raw.dwa_local_planner_params_burger, MoveBaseNativeNode.nodeName + "/DWAPlannerROS"));
+        add(new Pair<>(R.raw.move_base_params, MoveBaseNativeNode.nodeName));
+        add(new Pair<>(R.raw.amcl_params, AmclNativeNode.nodeName));
+//        add(new Pair<>(R.raw.global_planner_params, MoveBaseNativeNode.nodeName + "/GlobalPlanner"));
+//        add(new Pair<>(R.raw.navfn_global_planner_params, MoveBaseNativeNode.nodeName + "/NavfnROS"));
+    }};
+
+    private ArrayList<ParameterLoaderNode.Resource> mOpenedResources = new ArrayList<>();
+
+
     private NodeMainExecutor nodeMainExecutor = null;
     private URI masterUri;
     private String hostName;
     private MoveBaseNativeNode moveBaseNativeNode;
 
-    private PsmNativeNode psmNativeNode;
+    private LsmNativeNode lsmNativeNode;
+    private AmclNativeNode amclNativeNode;
+    private ParameterLoaderNode mParameterLoaderNode;
+
+    private ModuleStatusIndicator mRosParametersStatusIndicator;
+    private ModuleStatusIndicator mRosNavigationStatusIndicator;
+
     private EditText locationFrameIdView, imuFrameIdView;
     private TextView masterUriTextView;
     Button applyB;
@@ -93,6 +128,14 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
 
         applyB = findViewById(R.id.b_apply);
         applyB.setOnClickListener(this);
+        mRosParametersStatusIndicator = new ModuleStatusIndicator(this, (ImageView) findViewById(R.id.is_config_ok_image));
+        mRosNavigationStatusIndicator = new ModuleStatusIndicator(this, (ImageView) findViewById(R.id.is_navigation_ok_image));
+        // Load raw resources
+        for (Pair<Integer, String> ip : mResourcesToLoad) {
+            mOpenedResources.add(new ParameterLoaderNode.Resource(
+                    getResources().openRawResource(ip.first.intValue()), ip.second));
+        }
+//        addRuntimeParameters();
     }
 
     @Override
@@ -106,8 +149,10 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
         hostName = getRosHostname();
 
         Log.i(TAG, "Master URI: " + masterUri.toString());
+        configureParameterServer();
         startMoveBase();
-        startPsm();
+        startAmcl();
+        startLsm();
 
         final LocationPublisherNode locationPublisherNode = new LocationPublisherNode();
         ImuPublisherNode imuPublisherNode = new ImuPublisherNode();
@@ -227,29 +272,151 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
         }
     }
 
+    /**
+     * Adds resources to be loaded that depend on the device
+     * (they cannot be set at compile time statically).
+     */
+    private void addRuntimeParameters() {
+        String androidApiLevel = "android_api_level: " + Integer.toString(Build.VERSION.SDK_INT);
+        Log.i(TAG, "Adding android API level parameter: " + androidApiLevel);
+        mOpenedResources.add(new ParameterLoaderNode.Resource(
+                new ByteArrayInputStream(androidApiLevel.getBytes()), "/tango"));
+    }
+
+    /**
+     * Helper method to block the calling thread until the latch is zeroed by some other task.
+     * @param latch Latch to wait for.
+     * @param latchName Name to be used in log messages for the given latch.
+     */
+    private void waitForLatchUnlock(CountDownLatch latch, String latchName) {
+        try {
+            Log.i(TAG, "Waiting for " + latchName + " latch release...");
+            latch.await();
+            Log.i(TAG,latchName + " latch released!");
+        } catch (InterruptedException ie) {
+            Log.w(TAG, "Warning: continuing before " + latchName + " latch was released");
+        }
+    }
+
+    /**
+     * Starts {@link ParameterLoaderNode} and waits for it to finish setting parameters.
+     */
+    private void configureParameterServer() {
+        CountDownLatch latch = new CountDownLatch(1);
+        startParameterLoaderNode(latch);
+        waitForLatchUnlock(latch, "parameter");
+    }
+
+    private void startParameterLoaderNode(final CountDownLatch latch) {
+        // Create node to load configuration to Parameter Server
+        Log.i(TAG, "Setting parameters in Parameter Server");
+        mRosParametersStatusIndicator.updateStatus(ModuleStatusIndicator.Status.LOADING);
+        NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic(hostName);
+        nodeConfiguration.setMasterUri(masterUri);
+        nodeConfiguration.setNodeName(ParameterLoaderNode.NODE_NAME);
+        mParameterLoaderNode = new ParameterLoaderNode(mOpenedResources);
+        nodeMainExecutor.execute(mParameterLoaderNode, nodeConfiguration,
+                new ArrayList<NodeListener>() {{
+                    add(new DefaultNodeListener() {
+                        @Override
+                        public void onShutdown(Node node) {
+                            latch.countDown();
+                            mRosParametersStatusIndicator.updateStatus(ModuleStatusIndicator.Status.OK);
+                        }
+
+                        @Override
+                        public void onError(Node node, Throwable throwable) {
+                            Log.e(TAG, "Error loading parameters to ROS parameter server: " + throwable.getMessage(), throwable);
+                            mRosParametersStatusIndicator.updateStatus(ModuleStatusIndicator.Status.ERROR);
+                        }
+                    });
+                }});
+    }
+
+    private String copySampleMap() {
+        // Create the sample map in the app data dir
+        String extdir = getExternalFilesDir(
+                Environment.getDataDirectory().getAbsolutePath()).getAbsolutePath();
+        File mapFile = new File(extdir, "lsm10_909_0613200.yaml");
+        // we do not copy the pgm here because the pgm from the apk is corrupt and unable to be loaded by the map_server.
+        if (!mapFile.exists()) {
+            try {
+                FileManager.copyResource(getResources(), R.raw.lsm10_909_06132100, mapFile);
+            } catch (IOException e) {
+                Log.e(TAG, "Error copying sample map: " + e.getMessage(), e);
+            }
+        }
+        return mapFile.getAbsolutePath();
+    }
+
+    private String copyBurgerUrdf() {
+        // Create the sample map in the app data dir
+        String extdir = getExternalFilesDir(
+                Environment.getDataDirectory().getAbsolutePath()).getAbsolutePath();
+        File burgerUrdf = new File(extdir, "turtlebot3_burger.urdf");
+        if (!burgerUrdf.exists()) {
+            try {
+                FileManager.copyResource(getResources(), R.raw.turtlebot3_burger, burgerUrdf);
+            } catch (IOException e) {
+                Log.e(TAG, "Error copying burger urdf: " + e.getMessage(), e);
+            }
+        }
+        return burgerUrdf.getAbsolutePath();
+    }
+
     // Create a native movebase node
     private void startMoveBase()
     {
         Log.i(TAG, "Starting native movebase node wrapper...");
-
+        mRosNavigationStatusIndicator.updateStatus(ModuleStatusIndicator.Status.LOADING);
         NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic(hostName);
 
         nodeConfiguration.setMasterUri(masterUri);
         nodeConfiguration.setNodeName(MoveBaseNativeNode.nodeName);
 
-        moveBaseNativeNode = new MoveBaseNativeNode();
-        nodeMainExecutor.execute(moveBaseNativeNode, nodeConfiguration);
+        String burgerUrdf = copyBurgerUrdf();
+        String mapYaml = copySampleMap();
+        String[] extraArgs = new String[2];
+        extraArgs[0] = burgerUrdf;
+        extraArgs[1] = mapYaml;
+        moveBaseNativeNode = new MoveBaseNativeNode(extraArgs);
+        nodeMainExecutor.execute(moveBaseNativeNode, nodeConfiguration, new ArrayList<NodeListener>(){{
+            add(new DefaultNodeListener() {
+                @Override
+                public void onStart(ConnectedNode connectedNode) {
+                    mRosNavigationStatusIndicator.updateStatus(ModuleStatusIndicator.Status.OK);
+                }
+
+                @Override
+                public void onError(Node node, Throwable throwable) {
+                    mRosNavigationStatusIndicator.updateStatus(ModuleStatusIndicator.Status.ERROR);
+                }
+            });
+        }});
     }
 
-    private void startPsm() {
-        Log.i(TAG, "Starting native Psm node wrapper...");
+
+    private void startLsm() {
+        Log.i(TAG, "Starting native laser scan matcher node wrapper...");
 
         NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic(hostName);
 
         nodeConfiguration.setMasterUri(masterUri);
-        nodeConfiguration.setNodeName(PsmNativeNode.nodeName);
+        nodeConfiguration.setNodeName(LsmNativeNode.nodeName);
 
-        psmNativeNode = new PsmNativeNode();
-        nodeMainExecutor.execute(psmNativeNode, nodeConfiguration);
+        lsmNativeNode = new LsmNativeNode();
+        nodeMainExecutor.execute(lsmNativeNode, nodeConfiguration);
+    }
+
+    private void startAmcl() {
+        Log.i(TAG, "Starting native amcl node wrapper...");
+
+        NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic(hostName);
+
+        nodeConfiguration.setMasterUri(masterUri);
+        nodeConfiguration.setNodeName(AmclNativeNode.nodeName);
+
+        amclNativeNode = new AmclNativeNode();
+        nodeMainExecutor.execute(amclNativeNode, nodeConfiguration);
     }
 }
