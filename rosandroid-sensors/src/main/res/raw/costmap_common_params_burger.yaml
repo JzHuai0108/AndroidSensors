@@ -14,7 +14,7 @@ inflation_layer:
   inflation_radius: 1.0
 
 obstacle_layer:
-  combination_method: 1
+  combination_method: 1  # 0 means overwrite, whatever data in the obstacle layer will be written to the master costmap.
   enabled: true
   footprint_clearing_enabled: true
   max_obstacle_height: 2.0

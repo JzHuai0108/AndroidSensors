@@ -66,11 +66,23 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
 
     private static ArrayList<Pair<Integer, String>> mResourcesToLoad = new ArrayList<Pair<Integer, String>>() {{
         add(new Pair<>(R.raw.costmap_common_params_burger, MoveBaseNativeNode.nodeName + "/local_costmap"));
-        add(new Pair<>(R.raw.costmap_common_params_burger, MoveBaseNativeNode.nodeName + "/global_costmap"));
+        // TODO(jhuai): try to adjust the namespace to display the global and local costmaps, but I doubt this.
+        // Also I may set these parameters with nh.setParam in movebase_jni.cpp.
+//        add(new Pair<>(R.raw.costmap_common_params_burger, MoveBaseNativeNode.nodeName + "/global_costmap"));
+//        add(new Pair<>(R.raw.local_costmap_params, MoveBaseNativeNode.nodeName + "/local_costmap"));
+//        add(new Pair<>(R.raw.global_costmap_params, MoveBaseNativeNode.nodeName + "/global_costmap"));
+//        add(new Pair<>(R.raw.dwa_local_planner_params_burger, MoveBaseNativeNode.nodeName + "/DWAPlannerROS"));
+//        add(new Pair<>(R.raw.move_base_params, MoveBaseNativeNode.nodeName));
+
+        add(new Pair<>(R.raw.costmap_common_params, MoveBaseNativeNode.nodeName + "/local_costmap"));
+        add(new Pair<>(R.raw.costmap_common_params, MoveBaseNativeNode.nodeName + "/global_costmap"));
         add(new Pair<>(R.raw.local_costmap_params, MoveBaseNativeNode.nodeName + "/local_costmap"));
         add(new Pair<>(R.raw.global_costmap_params, MoveBaseNativeNode.nodeName + "/global_costmap"));
-        add(new Pair<>(R.raw.dwa_local_planner_params_burger, MoveBaseNativeNode.nodeName + "/DWAPlannerROS"));
+        add(new Pair<>(R.raw.dwa_local_planner_params, MoveBaseNativeNode.nodeName + "/DWAPlannerROS"));
         add(new Pair<>(R.raw.move_base_params, MoveBaseNativeNode.nodeName));
+        add(new Pair<>(R.raw.global_planner_params, MoveBaseNativeNode.nodeName + "/GlobalPlanner"));
+        add(new Pair<>(R.raw.navfn_global_planner_params, MoveBaseNativeNode.nodeName + "/NavfnROS"));
+
         add(new Pair<>(R.raw.amcl_params, AmclNativeNode.nodeName));
 //        add(new Pair<>(R.raw.global_planner_params, MoveBaseNativeNode.nodeName + "/GlobalPlanner"));
 //        add(new Pair<>(R.raw.navfn_global_planner_params, MoveBaseNativeNode.nodeName + "/NavfnROS"));
