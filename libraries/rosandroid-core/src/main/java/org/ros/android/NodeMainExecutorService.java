@@ -16,29 +16,35 @@
 
 package org.ros.android;
 
+import static android.app.PendingIntent.FLAG_IMMUTABLE;
+
 import com.google.common.base.Preconditions;
 
 import android.app.AlertDialog;
 import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
+import android.graphics.Color;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WifiManager.WifiLock;
 import android.os.AsyncTask;
 import android.os.Binder;
+import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
-import android.support.v7.app.NotificationCompat;
 import android.util.Log;
 import android.view.WindowManager;
 import android.widget.Toast;
 import org.ros.RosCore;
-import org.ros.android.R;
+//import org.ros.android.android_core_components.R;
 import org.ros.concurrent.ListenerGroup;
 import org.ros.concurrent.SignalRunnable;
 import org.ros.exception.RosRuntimeException;
@@ -63,10 +69,13 @@ public class NodeMainExecutorService extends Service implements NodeMainExecutor
   // NOTE(damonkohler): If this is 0, the notification does not show up.
   private static final int ONGOING_NOTIFICATION = 1;
 
-  static final String ACTION_START = "org.ros.android.ACTION_START_NODE_RUNNER_SERVICE";
-  static final String ACTION_SHUTDOWN = "org.ros.android.ACTION_SHUTDOWN_NODE_RUNNER_SERVICE";
-  static final String EXTRA_NOTIFICATION_TITLE = "org.ros.android.EXTRA_NOTIFICATION_TITLE";
-  static final String EXTRA_NOTIFICATION_TICKER = "org.ros.android.EXTRA_NOTIFICATION_TICKER";
+  public static final String ACTION_START = "org.ros.android.ACTION_START_NODE_RUNNER_SERVICE";
+  public static final String ACTION_SHUTDOWN = "org.ros.android.ACTION_SHUTDOWN_NODE_RUNNER_SERVICE";
+  public static final String EXTRA_NOTIFICATION_TITLE = "org.ros.android.EXTRA_NOTIFICATION_TITLE";
+  public static final String EXTRA_NOTIFICATION_TICKER = "org.ros.android.EXTRA_NOTIFICATION_TICKER";
+
+  public static final String NOTIFICATION_CHANNEL_ID = "org.ros.android";
+  public static final String CHANNEL_NAME = "ROS Android background service";
 
   private final NodeMainExecutor nodeMainExecutor;
   private final IBinder binder;
@@ -83,8 +92,8 @@ public class NodeMainExecutorService extends Service implements NodeMainExecutor
    * Class for clients to access. Because we know this service always runs in
    * the same process as its clients, we don't need to deal with IPC.
    */
-  class LocalBinder extends Binder {
-    NodeMainExecutorService getService() {
+  public class LocalBinder extends Binder {
+    public NodeMainExecutorService getService() {
       return NodeMainExecutorService.this;
     }
   }
@@ -95,7 +104,7 @@ public class NodeMainExecutorService extends Service implements NodeMainExecutor
     nodeMainExecutor = DefaultNodeMainExecutor.newDefault();
     binder = new LocalBinder();
     listeners =
-            new ListenerGroup<>(
+            new ListenerGroup<NodeMainExecutorServiceListener>(
                     nodeMainExecutor.getScheduledExecutorService());
   }
 
@@ -112,7 +121,7 @@ public class NodeMainExecutorService extends Service implements NodeMainExecutor
       // We must be running on a pre-Honeycomb device.
       Log.w(TAG, "Unable to acquire high performance wifi lock.");
     }
-    WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
+    WifiManager wifiManager = WifiManager.class.cast(getApplicationContext().getSystemService(WIFI_SERVICE));
     wifiLock = wifiManager.createWifiLock(wifiLockType, TAG);
     wifiLock.acquire();
   }
@@ -157,7 +166,7 @@ public class NodeMainExecutorService extends Service implements NodeMainExecutor
           }
         });
         AlertDialog alertDialog = builder.create();
-        alertDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
+        alertDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_TOAST);
         alertDialog.show();
       }
     });
@@ -211,18 +220,11 @@ public class NodeMainExecutorService extends Service implements NodeMainExecutor
     if (intent.getAction().equals(ACTION_START)) {
       Preconditions.checkArgument(intent.hasExtra(EXTRA_NOTIFICATION_TICKER));
       Preconditions.checkArgument(intent.hasExtra(EXTRA_NOTIFICATION_TITLE));
-      NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
       Intent notificationIntent = new Intent(this, NodeMainExecutorService.class);
       notificationIntent.setAction(NodeMainExecutorService.ACTION_SHUTDOWN);
-      PendingIntent pendingIntent = PendingIntent.getService(this, 0, notificationIntent, 0);
-      Notification notification = builder.setContentIntent(pendingIntent)
-              .setSmallIcon(R.mipmap.icon)
-              .setTicker(intent.getStringExtra(EXTRA_NOTIFICATION_TICKER))
-              .setWhen(System.currentTimeMillis())
-              .setContentTitle(intent.getStringExtra(EXTRA_NOTIFICATION_TITLE))
-              .setAutoCancel(true)
-              .setContentText("Tap to shutdown.")
-              .build();
+      PendingIntent pendingIntent = PendingIntent.getService(this, 0, notificationIntent, FLAG_IMMUTABLE);
+      Notification notification = buildNotification(intent, pendingIntent);
+
       startForeground(ONGOING_NOTIFICATION, notification);
     }
     if (intent.getAction().equals(ACTION_SHUTDOWN)) {
@@ -311,5 +313,32 @@ public class NodeMainExecutorService extends Service implements NodeMainExecutor
         Toast.makeText(NodeMainExecutorService.this, text, Toast.LENGTH_SHORT).show();
       }
     });
+  }
+
+  private Notification buildNotification(Intent intent, PendingIntent pendingIntent) {
+    Notification notification = null;
+    Notification.Builder builder = null;
+    if (Build.VERSION.SDK_INT > Build.VERSION_CODES.O) {
+      NotificationChannel chan = new NotificationChannel(
+              NOTIFICATION_CHANNEL_ID, CHANNEL_NAME, NotificationManager.IMPORTANCE_NONE);
+      chan.setLightColor(Color.BLUE);
+      chan.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
+      NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+      assert manager != null;
+      manager.createNotificationChannel(chan);
+      builder = new Notification.Builder(this, NOTIFICATION_CHANNEL_ID);
+    } else {
+      builder = new Notification.Builder(this);
+    }
+    notification = builder.setContentIntent(pendingIntent)
+            .setOngoing(true)
+            .setSmallIcon(R.mipmap.icon)
+            .setTicker(intent.getStringExtra(EXTRA_NOTIFICATION_TICKER))
+            .setWhen(System.currentTimeMillis())
+            .setContentTitle(intent.getStringExtra(EXTRA_NOTIFICATION_TITLE))
+            .setAutoCancel(true)
+            .setContentText("Tap to shutdown.")
+            .build();
+    return notification;
   }
 }

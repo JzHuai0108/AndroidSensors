@@ -63,7 +63,7 @@ import java.util.regex.Pattern;
  * <p>
  * When this {@link Activity} is started, the last used (or the default)
  * {@link URI} is displayed to the user.
- *
+ * 
  * @author ethan.rublee@gmail.com (Ethan Rublee)
  * @author damonkohler@google.com (Damon Kohler)
  * @author munjaldesai@google.com (Munjal Desai)
@@ -80,7 +80,7 @@ public class MasterChooser extends AppCompatActivity {
    * Package name of the QR code reader used to scan QR codes.
    */
   private static final String BAR_CODE_SCANNER_PACKAGE_NAME =
-          "com.google.zxing.client.android.SCAN";
+      "com.google.zxing.client.android.SCAN";
 
   /**
    * Lookup text for catching a ConnectionException when attempting to
@@ -122,7 +122,7 @@ public class MasterChooser extends AppCompatActivity {
 
   private class StableArrayAdapter extends ArrayAdapter<String> {
 
-    HashMap<String, Integer> idMap = new HashMap<>();
+    HashMap<String, Integer> idMap = new HashMap<String, Integer>();
 
     public StableArrayAdapter(Context context, int textViewResourceId, List<String> objects) {
       super(context, textViewResourceId, objects);
@@ -148,8 +148,8 @@ public class MasterChooser extends AppCompatActivity {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.master_chooser);
     final Pattern uriPattern = RosURIPattern.URI;
-    uriText = findViewById(R.id.master_chooser_uri);
-    connectButton = findViewById(R.id.master_chooser_ok);
+    uriText = (AutoCompleteTextView) findViewById(R.id.master_chooser_uri);
+    connectButton = (Button) findViewById(R.id.master_chooser_ok);
     uriText.setThreshold(RosURIPattern.HTTP_PROTOCOL_LENGTH);
 
     ArrayAdapter<String> uriAdapter = new ArrayAdapter<>
@@ -179,8 +179,8 @@ public class MasterChooser extends AppCompatActivity {
       }
     });
 
-    ListView interfacesList = findViewById(R.id.networkInterfaces);
-    final List<String> list = new ArrayList<>();
+    ListView interfacesList = (ListView) findViewById(R.id.networkInterfaces);
+    final List<String> list = new ArrayList<String>();
 
     try {
       for (NetworkInterface networkInterface : Collections.list(NetworkInterface.getNetworkInterfaces())) {
@@ -209,8 +209,8 @@ public class MasterChooser extends AppCompatActivity {
     // Get the URI from preferences and display it. Since only primitive types
     // can be saved in preferences the URI is stored as a string.
     String uri =
-            getPreferences(MODE_PRIVATE).getString(PREFS_KEY_NAME,
-                    NodeConfiguration.DEFAULT_MASTER_URI.toString());
+        getPreferences(MODE_PRIVATE).getString(PREFS_KEY_NAME,
+            NodeConfiguration.DEFAULT_MASTER_URI.toString());
     uriText.setText(uri);
 
     connectionLayout = (LinearLayout) findViewById(R.id.connection_layout);
@@ -223,7 +223,7 @@ public class MasterChooser extends AppCompatActivity {
       if (resultCode == RESULT_OK) {
         String scanResultFormat = intent.getStringExtra("SCAN_RESULT_FORMAT");
         Preconditions.checkState(scanResultFormat.equals("TEXT_TYPE")
-                || scanResultFormat.equals("QR_CODE"));
+            || scanResultFormat.equals("QR_CODE"));
         String contents = intent.getStringExtra("SCAN_RESULT");
         uriText.setText(contents);
       }
@@ -335,7 +335,7 @@ public class MasterChooser extends AppCompatActivity {
       // Open the Market and take them to the page from which they can download the Barcode Scanner
       // app.
       startActivity(new Intent(Intent.ACTION_VIEW,
-              Uri.parse("market://details?id=com.google.zxing.client.android")));
+          Uri.parse("market://details?id=com.google.zxing.client.android")));
     } else {
       // Call the Barcode Scanner to let the user scan a QR code.
       startActivityForResult(intent, 0);
@@ -379,7 +379,7 @@ public class MasterChooser extends AppCompatActivity {
 
   /**
    * Check if the specified app is installed.
-   *
+   * 
    * @param intent
    *          The activity that you wish to look for.
    * @return true if the desired activity is install on the device, false
@@ -387,7 +387,7 @@ public class MasterChooser extends AppCompatActivity {
    */
   protected boolean isQRCodeReaderInstalled(Intent intent) {
     List<ResolveInfo> list =
-            getPackageManager().queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
+        getPackageManager().queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
     return (list.size() > 0);
   }
 
@@ -444,7 +444,7 @@ public class MasterChooser extends AppCompatActivity {
    * {@link android.util.Patterns}. The {@link android.util.Patterns} class could not be
    * utilized because the PROTOCOL regex included other web protocols besides http. The
    * http protocol is required by ROS.
-   */
+  */
   private static class RosURIPattern
   {
     /* A word boundary or end of input.  This is to stop foo.sure from matching as foo.su */
