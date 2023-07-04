@@ -5,6 +5,10 @@ footprint: [[-0.105, -0.105], [-0.105, 0.105], [0.041, 0.105], [0.041, -0.105]]
 footprint_padding: 0.01
 #robot_radius: 0.105
 
+map_type: costmap
+# map_type costmap -> name:obstacle_layer,          type: "costmap_2d::ObstacleLayer"} # costmap_2d default
+# map_type voxel -> name:obstacle_layer,          type: "costmap_2d::VoxelLayer"}
+
 inflation_radius: 1.0
 cost_scaling_factor: 3.0
 
@@ -19,7 +23,9 @@ obstacle_layer:
   footprint_clearing_enabled: true
   max_obstacle_height: 2.0
   observation_sources: scan
-
-map_type: costmap
-observation_sources: scan
-scan: {sensor_frame: base_scan, data_type: LaserScan, topic: scan, marking: true, clearing: true}
+  scan:
+    sensor_frame: base_scan
+    data_type: LaserScan
+    topic: scan
+    marking: true
+    clearing: true

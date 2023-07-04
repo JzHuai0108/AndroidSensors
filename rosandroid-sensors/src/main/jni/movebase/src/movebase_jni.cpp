@@ -149,7 +149,7 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_MoveBaseNati
     MapServer ms(map_yaml, res);
 
     ros::Publisher chatter_pub = nh.advertise<std_msgs::String>("mb_chatter", 1000);
-    ros::Rate loop_rate(30);
+    ros::Rate loop_rate(10);
 
     nh.setParam("/move_base/base_local_planner", "dwa_local_planner/DWAPlannerROS");
     nh.setParam("/move_base/aggressive_reset/reset_distance", 1.84);
@@ -172,7 +172,7 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_MoveBaseNati
         std::stringstream ss;
         ss << "movebase hello world " << count;
         msg.data = ss.str();
-        ROS_INFO("%s", msg.data.c_str());
+        // ROS_INFO("%s", msg.data.c_str());
 
         /**
          * The publish() function is how you send messages. The parameter
