@@ -86,6 +86,8 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
 
     private LsmNativeNode lsmNativeNode;
     private AmclNativeNode amclNativeNode;
+
+    private PathListenerNode pathListenerNode;
     private ParameterLoaderNode mParameterLoaderNode;
 
     private ModuleStatusIndicator mRosParametersStatusIndicator;
@@ -153,6 +155,7 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
         startMoveBase();
         startAmcl();
         startLsm();
+        startPathListener();
 
         final LocationPublisherNode locationPublisherNode = new LocationPublisherNode();
         ImuPublisherNode imuPublisherNode = new ImuPublisherNode();
@@ -418,5 +421,16 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
 
         amclNativeNode = new AmclNativeNode();
         nodeMainExecutor.execute(amclNativeNode, nodeConfiguration);
+    }
+
+    private void startPathListener() {
+        Log.i(TAG, "Starting path listener node...");
+        NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic(hostName);
+
+        nodeConfiguration.setMasterUri(masterUri);
+        nodeConfiguration.setNodeName(AmclNativeNode.nodeName);
+
+        pathListenerNode = new PathListenerNode();
+        nodeMainExecutor.execute(pathListenerNode, nodeConfiguration);
     }
 }

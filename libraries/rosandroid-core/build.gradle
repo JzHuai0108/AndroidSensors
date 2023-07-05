@@ -32,6 +32,7 @@ dependencies {
     api 'org.ros.rosjava_messages:std_msgs:0.5.11'
     api 'org.ros.rosjava_messages:rosgraph_msgs:1.11.2'
     api 'org.ros.rosjava_messages:sensor_msgs:1.12.5'
+    api 'org.ros.rosjava_messages:nav_msgs:1.12.7'
     api 'org.ros.rosjava_messages:diagnostic_msgs:1.12.5'
     api "org.ros.rosjava_messages:geometry_msgs:1.12.7"
 
