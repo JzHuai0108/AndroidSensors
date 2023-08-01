@@ -12,7 +12,7 @@ import nav_msgs.Path;
 public class PathListenerNode extends AbstractNodeMain {
 
     public static String TAG = "path_listener";
-
+    public static final String nodeName = "path_listener_node";
     @Override
     public GraphName getDefaultNodeName() {
         return GraphName.of(TAG);
