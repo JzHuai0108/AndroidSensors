@@ -152,7 +152,6 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_MoveBaseNati
     ros::Rate loop_rate(10);
 
     nh.setParam("/move_base/base_local_planner", "dwa_local_planner/DWAPlannerROS");
-    nh.setParam("/move_base/aggressive_reset/reset_distance", 1.84);
     nh.setParam("/move_base/base_global_planner", "navfn/NavfnROS");
     nh.setParam("/move_base/clearing_rotation_allowed", true);
     nh.setParam("/move_base/conservative_reset/reset_distance", 3.0);

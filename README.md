@@ -38,14 +38,11 @@ Following instructions [here](http://wiki.ros.org/android_ndk/Tutorials/Wrapping
 javac -h . -cp .:/home/jhuai/.gradle/caches/modules-2/files-2.1/org.ros.rosjava_core/rosjava/0.3.5/7320e6ff76abf066da6850f44f3dcb05f890e043/rosjava-0.3.5.jar:/home/jhuai/.gradle/caches/modules-2/files-2.1/org.apache.commons/com.springsource.org.apache.commons.logging/1.1.1/7657caf2c78e1d79c74d36f2ae128a115f7cc180/com.springsource.org.apache.commons.logging-1.1.1.jar /media/jhuai/docker/roscpp_android_ndk/AndroidSensors/rosandroid-sensors/src/main/java/org/ros/rosjava_tutorial_native_node/MoveBaseNativeNode.java
 ```
 
-3. Setup and build the roscpp_android_ndk static library
+3. Setup the roscpp_android_ndk static library
 In a terminal
 ```
 cd /media/jhuai/docker/roscpp_android_ndk/ros_android
 ./setup_ndk_project.sh /media/jhuai/docker/roscpp_android_ndk/ros_android/output 0
-export PATH=$PATH:/home/jhuai/Android/android-ndk-r18b
-cd /media/jhuai/docker/roscpp_android_ndk/ros_android/output/roscpp_android_ndk
-ndk-build
 ```
 
 Now download rosandroid-sensors, and configure the ndk directory in
@@ -56,12 +53,18 @@ ndk.dir=/home/jhuai/Android/android-ndk-r18b
 ```
 
 
-4. Build the chatter_jni.so
+4. Build the movebase_jni.so
 ```
-# In a terminal
+# In a terminal on Ubuntu
 export PATH=$PATH:/home/jhuai/Android/android-ndk-r18b
 cd /media/jhuai/docker/roscpp_android_ndk/AndroidSensors/rosandroid-sensors/src/main/jni
 ndk-build
+
+# Alternatively on windows
+cd C:\Users\jhuai\AppData\Local\Android\Sdk\ndk\android-ndk-r18b
+$env NDK_RPOJECT_PATH = '/media/jhuai/docker/roscpp_android_ndk/AndroidSensors/rosandroid-sensors/src/main'
+.\ndk-build.cmd
+
 ```
 The jni folder's structure is
 ```

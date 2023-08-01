@@ -22,8 +22,8 @@
   angular_sim_granularity: 0.1
 
 # Goal Tolerance Parameters
-  xy_goal_tolerance: 0.05
-  yaw_goal_tolerance: 0.17
+  xy_goal_tolerance: 0.1 # Huai: Feng, set this value as the upper java layer.
+  yaw_goal_tolerance: 0.17 # Huai: Feng, set this value as the upper java layer.
   latch_xy_goal_tolerance: false
 
 # Forward Simulation Parameters
