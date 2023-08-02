@@ -27,7 +27,7 @@ obstacle_layer:
   scan:
     sensor_frame: base_scan
     data_type: LaserScan
-    topic: masked_scan
+    topic: scan
     marking: true
     clearing: true
     observation_persistence: 0.0

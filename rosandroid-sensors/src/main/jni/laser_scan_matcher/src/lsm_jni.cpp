@@ -84,7 +84,7 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_LsmNativeNod
     nh.setParam("/stamped_vel", true);
     nh.setParam("/laser_scan_matcher_node/max_iterations", 10);
     nh.setParam("/laser_scan_matcher_node/use_odom", false);
-    nh.setParam("/laser_scan_matcher_node/use_vel", true);
+    nh.setParam("/laser_scan_matcher_node/use_vel", false);
     nh.setParam("/laser_scan_matcher_node/use_imu", false);
     nh.setParam("/laser_scan_matcher_node/publish_odometry", true);
     nh.setParam("/laser_scan_matcher_node/base_frame", "base_link");
