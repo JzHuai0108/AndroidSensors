@@ -25,6 +25,14 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_MoveBaseNati
 JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_MoveBaseNativeNode_shutdown
   (JNIEnv *, jobject);
 
+/*
+ * Class:     org_ros_rosjava_tutorial_native_node_MoveBaseNativeNode
+ * Method:    setCancelGoals
+ * Signature: ()I
+ */
+JNIEXPORT void JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_MoveBaseNativeNode_setCancelGoals
+  (JNIEnv *, jobject);
+
 #ifdef __cplusplus
 }
 #endif

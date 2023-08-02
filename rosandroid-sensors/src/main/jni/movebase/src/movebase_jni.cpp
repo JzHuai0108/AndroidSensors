@@ -36,7 +36,29 @@ inline string stdStringFromjString(JNIEnv *env, jstring java_string) {
     return out;
 }
 
+bool cancelGoalsAll(ros::NodeHandle &nh) {
+    ros::Publisher cancel_pub = nh.advertise<actionlib_msgs::GoalID>("/move_base/cancel", 1000);
+    actionlib_msgs::GoalID msg;
+    msg.stamp.sec = 0;
+    msg.stamp.nsec = 0;
+    msg.id = "";
+
+    ros::Rate loop_rate(10);
+    int count = 0;
+    while (cancel_pub.getNumSubscribers() < 1) {
+        loop_rate.sleep(); // wait for a connection to publisher
+        count++;
+    }
+    while (count < 10) { // Broadcast for 1 sec.
+        cancel_pub.publish(msg);
+        loop_rate.sleep();
+        count++;
+    }
+}
+
 bool running;
+bool cancelGoals;
+int cancelCountdown;
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
     log("Movebase library has been loaded");
@@ -44,12 +66,44 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
     return JNI_VERSION_1_6;
 }
 
+void cancelGoalCheck(ros::Publisher &cancel_pub) {
+    if (cancelGoals) {
+        ROS_INFO("Cancel goals started!");
+        cancelGoals = false;
+        cancelCountdown = 10;
+    }
+    if (cancelCountdown <= 0) {
+        return;
+    }
+    if (cancel_pub.getNumSubscribers() < 1) {
+        ROS_WARN("Cancel publisher has no subscribers!");
+        cancelCountdown--;
+    } else {
+        actionlib_msgs::GoalID msg;
+        msg.stamp.sec = 0;
+        msg.stamp.nsec = 0;
+        msg.id = "";
+        cancel_pub.publish(msg);
+        cancelCountdown--;
+    }
+}
+
+/*
+ * Class:     org_ros_rosjava_tutorial_native_node_MoveBaseNativeNode
+ * Method:    setCancelGoals
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_MoveBaseNativeNode_setCancelGoals(JNIEnv *env, jobject obj) {
+    cancelGoals = true;
+}
+
 JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_MoveBaseNativeNode_execute(
         JNIEnv *env, jobject obj, jstring rosMasterUri, jstring rosHostname, jstring rosNodeName,
         jobjectArray remappingArguments) {
     log("Native movebase node started.");
     running = true;
-
+    cancelGoals = false;
+    cancelCountdown = 0;
     string master("__master:=" + stdStringFromjString(env, rosMasterUri));
     string hostname("__ip:=" + stdStringFromjString(env, rosHostname));
     string node_name(stdStringFromjString(env, rosNodeName));
@@ -149,6 +203,7 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_MoveBaseNati
     MapServer ms(map_yaml, res);
 
     ros::Publisher chatter_pub = nh.advertise<std_msgs::String>("mb_chatter", 1000);
+    ros::Publisher cancel_pub = nh.advertise<actionlib_msgs::GoalID>("/move_base/cancel", 1000);
     ros::Rate loop_rate(10);
 
     nh.setParam("/move_base/base_local_planner", "dwa_local_planner/DWAPlannerROS");
@@ -180,7 +235,7 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_MoveBaseNati
          * in the constructor above.
          */
         chatter_pub.publish(msg);
-
+        cancelGoalCheck(cancel_pub);
         ros::spinOnce();
         loop_rate.sleep();
         ++count;

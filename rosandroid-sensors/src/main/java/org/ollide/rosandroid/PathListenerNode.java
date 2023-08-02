@@ -15,7 +15,7 @@ public class PathListenerNode extends AbstractNodeMain {
     public static final String nodeName = "path_listener_node";
     @Override
     public GraphName getDefaultNodeName() {
-        return GraphName.of(TAG);
+        return GraphName.of(nodeName);
     }
 
     @Override

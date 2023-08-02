@@ -46,6 +46,11 @@
         android:id="@+id/b_apply"
         android:layout_marginTop="4dp"/>
 
+    <Button
+        android:id="@+id/cancelgoalbutton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Cancel Goals" />
 
     <TextView
         android:id="@+id/is_config_ok_text"

@@ -33,6 +33,8 @@ public class MoveBaseNativeNode extends NativeNodeMain {
     @Override
     protected native int shutdown();
 
+    public native void setCancelGoals();
+
     @Override
     public void onStart(ConnectedNode connectedNode) {
         mLog = connectedNode.getLog();

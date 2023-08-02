@@ -132,6 +132,14 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
         applyB.setOnClickListener(this);
         mRosParametersStatusIndicator = new ModuleStatusIndicator(this, (ImageView) findViewById(R.id.is_config_ok_image));
         mRosNavigationStatusIndicator = new ModuleStatusIndicator(this, (ImageView) findViewById(R.id.is_navigation_ok_image));
+
+        Button button = (Button) findViewById(R.id.cancelgoalbutton);
+        button.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                cancelGoals();
+            }
+        });
+
         // Load raw resources
         for (Pair<Integer, String> ip : mResourcesToLoad) {
             mOpenedResources.add(new ParameterLoaderNode.Resource(
@@ -432,5 +440,10 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
 
         pathListenerNode = new PathListenerNode();
         nodeMainExecutor.execute(pathListenerNode, nodeConfiguration);
+    }
+
+    private void cancelGoals() {
+        Log.i(TAG, "Starting cancel goals...");
+        moveBaseNativeNode.setCancelGoals();
     }
 }
