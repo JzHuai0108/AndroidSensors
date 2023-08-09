@@ -67,6 +67,20 @@ include $(BUILD_SHARED_LIBRARY)
 
 
 include $(CLEAR_VARS)
+LOCAL_PATH      :=$(MY_LOCAL_PATH)/glposesampler
+LOCAL_MODULE    := glposesampler_jni
+LOCAL_CFLAGS    := -std=c++11 -pthread -fPIC -fexceptions -frtti
+LOCAL_CPPFLAGS  := -isystem
+LOCAL_CPP_FEATURES := exceptions
+LOCAL_SRC_FILES := $(LOCAL_PATH)/glposesampler_jni.cpp
+LOCAL_C_INCLUDES += $(LOCAL_PATH)
+LOCAL_LDFLAGS := -Wl,--exclude-libs,libgcc.a -Wl,--exclude-libs,libgnustl_shared.so
+LOCAL_LDLIBS := -landroid -llog
+LOCAL_STATIC_LIBRARIES := roscpp_android_ndk
+include $(BUILD_SHARED_LIBRARY)
+
+
+include $(CLEAR_VARS)
 LOCAL_PATH      :=$(MY_LOCAL_PATH)/laser_logger
 LOCAL_MODULE    := laser_logger_jni
 LOCAL_CFLAGS    := -std=c++11 -pthread -fPIC -fexceptions -frtti

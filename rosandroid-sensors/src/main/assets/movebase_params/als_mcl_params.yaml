@@ -128,7 +128,7 @@ mae_histogram_bin_width: 0.05
 
 # If use_gl_pose_sampler is true, global-localization-based pose sampler is used.
 # The sampled poses are integrated to the mcl estimate via importance sampling.
-use_gl_pose_sampler: false
+#use_gl_pose_sampler: false
 
 # fuse_gl_pose_sampler_only_unreliable is true,
 # the sampled pose is fused if reliability is less than 90 %.
