@@ -48,12 +48,18 @@ import org.ros.node.NodeListener;
 import org.ros.rosjava_tutorial_native_node.MoveBaseNativeNode;
 import org.ros.rosjava_tutorial_native_node.LsmNativeNode;
 import org.ros.rosjava_tutorial_native_node.AmclNativeNode;
+import org.ros.rosjava_tutorial_native_node.LaserLoggerNativeNode;
+import org.ros.rosjava_tutorial_native_node.AlsMclNativeNode;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 
 public class MainActivity extends RosActivity implements View.OnClickListener {
@@ -62,18 +68,19 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
         System.loadLibrary("movebase_jni");
         System.loadLibrary("lsm_jni");
         System.loadLibrary("amcl_jni");
+        System.loadLibrary("als_mcl_jni");
+        System.loadLibrary("laser_logger_jni");
     }
 
-    private static ArrayList<Pair<Integer, String>> mResourcesToLoad = new ArrayList<Pair<Integer, String>>() {{
-        add(new Pair<>(R.raw.costmap_common_params_burger, MoveBaseNativeNode.nodeName + "/local_costmap"));
-        add(new Pair<>(R.raw.costmap_common_params_burger, MoveBaseNativeNode.nodeName + "/global_costmap"));
-        add(new Pair<>(R.raw.local_costmap_params, MoveBaseNativeNode.nodeName + "/local_costmap"));
-        add(new Pair<>(R.raw.global_costmap_params, MoveBaseNativeNode.nodeName + "/global_costmap"));
-        add(new Pair<>(R.raw.dwa_local_planner_params_burger, MoveBaseNativeNode.nodeName + "/DWAPlannerROS"));
-        add(new Pair<>(R.raw.move_base_params, MoveBaseNativeNode.nodeName));
-        add(new Pair<>(R.raw.amcl_params, AmclNativeNode.nodeName));
-//        add(new Pair<>(R.raw.global_planner_params, MoveBaseNativeNode.nodeName + "/GlobalPlanner"));
-//        add(new Pair<>(R.raw.navfn_global_planner_params, MoveBaseNativeNode.nodeName + "/NavfnROS"));
+    private static ArrayList<Pair<String, String>> mResourcesToLoad = new ArrayList<Pair<String, String>>() {{
+        add(new Pair<>("movebase_params/costmap_common_params_burger.yaml", MoveBaseNativeNode.nodeName + "/local_costmap"));
+        add(new Pair<>("movebase_params/costmap_common_params_burger.yaml", MoveBaseNativeNode.nodeName + "/global_costmap"));
+        add(new Pair<>("movebase_params/local_costmap_params.yaml", MoveBaseNativeNode.nodeName + "/local_costmap"));
+        add(new Pair<>("movebase_params/global_costmap_params.yaml", MoveBaseNativeNode.nodeName + "/global_costmap"));
+        add(new Pair<>("movebase_params/dwa_local_planner_params_burger.yaml", MoveBaseNativeNode.nodeName + "/DWAPlannerROS"));
+        add(new Pair<>("movebase_params/move_base_params.yaml", MoveBaseNativeNode.nodeName));
+        add(new Pair<>("movebase_params/als_mcl_params.yaml", AlsMclNativeNode.nodeName));
+        //        add(new Pair<>("movebase_params/amcl_params.yaml", AmclNativeNode.nodeName));
     }};
 
     private ArrayList<ParameterLoaderNode.Resource> mOpenedResources = new ArrayList<>();
@@ -87,6 +94,9 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
     private LsmNativeNode lsmNativeNode;
     private AmclNativeNode amclNativeNode;
 
+    private LaserLoggerNativeNode laserLoggerNativeNode;
+    private AlsMclNativeNode alsMclNativeNode;
+
     private PathListenerNode pathListenerNode;
     private ParameterLoaderNode mParameterLoaderNode;
 
@@ -96,11 +106,13 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
     private EditText locationFrameIdView, imuFrameIdView;
     private TextView masterUriTextView;
     Button applyB;
+    boolean recording;
     private OnFrameIdChangeListener locationFrameIdListener, imuFrameIdListener;
 
     public MainActivity() {
         super("RosAndroidExample", "RosAndroidExample");
     }
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -140,10 +152,29 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
             }
         });
 
+        final Button logbutton = (Button) findViewById(R.id.logbutton);
+        logbutton.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                if (recording) {
+                    stopLaserLogging();
+                    logbutton.setText(R.string.start_logging);
+                } else {
+                    startLaserLogging();
+                    logbutton.setText(R.string.stop_logging);
+                }
+                recording = !recording;
+            }
+        });
+
         // Load raw resources
-        for (Pair<Integer, String> ip : mResourcesToLoad) {
-            mOpenedResources.add(new ParameterLoaderNode.Resource(
-                    getResources().openRawResource(ip.first.intValue()), ip.second));
+        for (Pair<String, String> ip : mResourcesToLoad) {
+            InputStream assetInStream=null;
+            try { // https://stackoverflow.com/questions/1933015/opening-a-file-from-assets-folder-in-android
+                assetInStream=getAssets().open(ip.first);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            mOpenedResources.add(new ParameterLoaderNode.Resource(assetInStream, ip.second));
         }
 //        addRuntimeParameters();
     }
@@ -161,8 +192,9 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
         Log.i(TAG, "Master URI: " + masterUri.toString());
         configureParameterServer();
         startMoveBase();
-        startAmcl();
+//        startAmcl();
         startLsm();
+        startAlsMcl();
 //        startPathListener();
 
         final LocationPublisherNode locationPublisherNode = new LocationPublisherNode();
@@ -363,16 +395,38 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
     private String copyBurgerUrdf() {
         // Create the sample map in the app data dir
         String extdir = getExternalFilesDir(
-                Environment.getDataDirectory().getAbsolutePath()).getAbsolutePath();
-        File burgerUrdf = new File(extdir, "turtlebot3_burger.urdf");
-        if (!burgerUrdf.exists()) {
-            try {
-                FileManager.copyResource(getResources(), R.raw.turtlebot3_burger, burgerUrdf);
-            } catch (IOException e) {
-                Log.e(TAG, "Error copying burger urdf: " + e.getMessage(), e);
-            }
+                Environment.getDataDirectory().getAbsolutePath()).getAbsolutePath() + "/movebase_params";
+        if (!new File(extdir).exists()) {
+            new File(extdir).mkdir();
         }
-        return burgerUrdf.getAbsolutePath();
+        String burgerUrdf = extdir + "/turtlebot3_burger.urdf";
+        File burgerUrdfFile = new File(burgerUrdf);
+        if (!burgerUrdfFile.exists()) {
+            FileManager.copyAssetFile(getAssets(), "movebase_params/turtlebot3_burger.urdf", burgerUrdf);
+        }
+        return burgerUrdf;
+    }
+
+    private String copyClassifierAsset() {
+        String extdir = getExternalFilesDir(
+                Environment.getDataDirectory().getAbsolutePath()).getAbsolutePath() + "/classifiers";
+        File f = new File(extdir);
+        if (!f.exists()) {
+            new File(extdir).mkdir();
+            FileManager.copyAssetDir(getAssets(), "classifiers", extdir);
+        }
+        return extdir;
+    }
+
+    private String getUniqueBagPath() {
+        String extdir = getExternalFilesDir(
+                Environment.getDataDirectory().getAbsolutePath()).getAbsolutePath() + "/rosbags";
+        if (!new File(extdir).exists()) {
+            new File(extdir).mkdir();
+        }
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.getDefault());
+        String currentDateandTime = sdf.format(new Date());
+        return extdir + "/" + currentDateandTime + ".bag";
     }
 
     // Create a native movebase node
@@ -431,6 +485,18 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
         nodeMainExecutor.execute(amclNativeNode, nodeConfiguration);
     }
 
+    private void startAlsMcl() {
+        Log.i(TAG, "Starting native als mcl node wrapper...");
+        NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic(hostName);
+        nodeConfiguration.setMasterUri(masterUri);
+        nodeConfiguration.setNodeName(AlsMclNativeNode.nodeName);
+        String extClassifierPath = copyClassifierAsset();
+        String[] extraArgs = new String[1];
+        extraArgs[0] = extClassifierPath + "/";
+        alsMclNativeNode = new AlsMclNativeNode(extraArgs);
+        nodeMainExecutor.execute(alsMclNativeNode, nodeConfiguration);
+    }
+
     private void startPathListener() {
         Log.i(TAG, "Starting path listener node...");
         NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic(hostName);
@@ -446,4 +512,21 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
         Log.i(TAG, "Starting cancel goals...");
         moveBaseNativeNode.setCancelGoals();
     }
+
+    private void startLaserLogging() {
+        Log.i(TAG, "Starting native laser logging node wrapper...");
+        NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic(hostName);
+        nodeConfiguration.setMasterUri(masterUri);
+        nodeConfiguration.setNodeName(LaserLoggerNativeNode.nodeName);
+        String rosbagPath = getUniqueBagPath();
+        String[] extraArgs = new String[1];
+        extraArgs[0] = rosbagPath;
+        laserLoggerNativeNode = new LaserLoggerNativeNode(extraArgs);
+        nodeMainExecutor.execute(laserLoggerNativeNode, nodeConfiguration);
+    }
+
+    private void stopLaserLogging() {
+        laserLoggerNativeNode.shutdown();
+    }
+
 }

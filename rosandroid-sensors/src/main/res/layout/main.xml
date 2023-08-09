@@ -52,6 +52,12 @@
         android:layout_height="wrap_content"
         android:text="Cancel Goals" />
 
+    <Button
+        android:id="@+id/logbutton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/start_logging" />
+
     <TextView
         android:id="@+id/is_config_ok_text"
         android:layout_width="wrap_content"

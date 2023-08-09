@@ -51,8 +51,38 @@ LOCAL_LDLIBS := -landroid -llog
 LOCAL_STATIC_LIBRARIES := roscpp_android_ndk
 include $(BUILD_SHARED_LIBRARY)
 
+
+include $(CLEAR_VARS)
+LOCAL_PATH      :=$(MY_LOCAL_PATH)/als_mcl
+LOCAL_MODULE    := als_mcl_jni
+LOCAL_CFLAGS    := -std=c++11 -pthread -fPIC -fexceptions -frtti
+LOCAL_CPPFLAGS  := -isystem
+LOCAL_CPP_FEATURES := exceptions
+LOCAL_SRC_FILES := $(LOCAL_PATH)/als_mcl_jni.cpp
+LOCAL_C_INCLUDES += $(LOCAL_PATH)
+LOCAL_LDFLAGS := -Wl,--exclude-libs,libgcc.a -Wl,--exclude-libs,libgnustl_shared.so
+LOCAL_LDLIBS := -landroid -llog
+LOCAL_STATIC_LIBRARIES := roscpp_android_ndk
+include $(BUILD_SHARED_LIBRARY)
+
+
+include $(CLEAR_VARS)
+LOCAL_PATH      :=$(MY_LOCAL_PATH)/laser_logger
+LOCAL_MODULE    := laser_logger_jni
+LOCAL_CFLAGS    := -std=c++11 -pthread -fPIC -fexceptions -frtti
+LOCAL_CPPFLAGS  := -isystem
+LOCAL_CPP_FEATURES := exceptions
+LOCAL_SRC_FILES := $(LOCAL_PATH)/laser_logger_jni.cpp
+LOCAL_C_INCLUDES += $(LOCAL_PATH)
+LOCAL_LDFLAGS := -Wl,--exclude-libs,libgcc.a -Wl,--exclude-libs,libgnustl_shared.so
+LOCAL_LDLIBS := -landroid -llog
+LOCAL_STATIC_LIBRARIES := roscpp_android_ndk
+include $(BUILD_SHARED_LIBRARY)
+
+
 # This file should contain the import path for roscpp_android_ndk buildscript.
-# For example: $(call import-add-path, /home/user/ros-android-ndk/roscpp_android/output)
+# For example:
+# $(call import-add-path, /home/user/ros-android-ndk/roscpp_android/output)
 # The local file shouldn't be commited to the repository.
 include $(MY_LOCAL_PATH)/local-properties.mk
 $(call import-module, roscpp_android_ndk)

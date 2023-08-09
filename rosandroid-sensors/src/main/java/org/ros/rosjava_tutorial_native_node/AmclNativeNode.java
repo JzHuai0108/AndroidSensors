@@ -7,7 +7,7 @@ import org.ros.node.NativeNodeMain;
 import org.ros.node.Node;
 
 /**
- * Class to implement a polar scan matcher native node.
+ * Class to implement the amcl native node.
  **/
 public class AmclNativeNode extends NativeNodeMain {
     private static final String libName = "amcl_jni";

@@ -7,17 +7,17 @@ import org.ros.node.NativeNodeMain;
 import org.ros.node.Node;
 
 /**
- * Class to implement a laser scan matcher native node.
+ * Class to implement the als mcl native node.
  **/
-public class LsmNativeNode extends NativeNodeMain {
-    private static final String libName = "lsm_jni";
-    public static final String nodeName = "laser_scan_matcher_node";
+public class AlsMclNativeNode extends NativeNodeMain {
+    private static final String libName = "als_mcl_jni";
+    public static final String nodeName = "als_mcl";
     private Log mLog;
-    public LsmNativeNode() {
+    public AlsMclNativeNode() {
         super(libName);
     }
 
-    public LsmNativeNode(String[] remappingArguments) {
+    public AlsMclNativeNode(String[] remappingArguments) {
         super(libName, remappingArguments);
     }
 
@@ -41,7 +41,7 @@ public class LsmNativeNode extends NativeNodeMain {
     @Override
     public void onError(Node node, Throwable throwable) {
         if (super.executeReturnCode != 0 && mLog != null) {
-            mLog.error("LaserScanMatcherNativeNode error code: " + Integer.toString(super.executeReturnCode), throwable);
+            mLog.error("AlsMclNativeNode error code: " + Integer.toString(super.executeReturnCode), throwable);
         }
     }
 }

@@ -76,8 +76,8 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_LsmNativeNod
         env->ReleaseStringUTFChars((jstring) env->GetObjectArrayElement(remappingArguments, i),
                                    refs[i]);
     }
-    delete refs;
-    delete argv;
+    delete []refs;
+    delete []argv;
 
     ros::NodeHandle nh;
     ros::NodeHandle nh_private("~");
@@ -92,7 +92,7 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_LsmNativeNod
     nh.setParam("/laser_scan_matcher_node/scan_range_min", 0.3);
     scan_tools::LaserScanMatcher laser_scan_matcher(nh, nh_private);
 
-    ros::Publisher chatter_pub = nh.advertise<std_msgs::String>("lsm_chatter", 1000);
+    ros::Publisher chatter_pub = nh.advertise<std_msgs::String>("lsm_chatter", 100);
     ros::Rate loop_rate(30);
 
     int count = 0;
@@ -119,7 +119,7 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_LsmNativeNod
         ++count;
     }
 
-    log("Exiting from JNI call.");
+    log("Exiting from lsm JNI call.");
     return 0;
 }
 

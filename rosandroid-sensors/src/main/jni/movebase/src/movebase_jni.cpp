@@ -37,7 +37,7 @@ inline string stdStringFromjString(JNIEnv *env, jstring java_string) {
 }
 
 bool cancelGoalsAll(ros::NodeHandle &nh) {
-    ros::Publisher cancel_pub = nh.advertise<actionlib_msgs::GoalID>("/move_base/cancel", 1000);
+    ros::Publisher cancel_pub = nh.advertise<actionlib_msgs::GoalID>("/move_base/cancel", 100);
     actionlib_msgs::GoalID msg;
     msg.stamp.sec = 0;
     msg.stamp.nsec = 0;
@@ -54,6 +54,7 @@ bool cancelGoalsAll(ros::NodeHandle &nh) {
         loop_rate.sleep();
         count++;
     }
+    return true;
 }
 
 bool running;
@@ -148,8 +149,8 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_MoveBaseNati
         env->ReleaseStringUTFChars((jstring) env->GetObjectArrayElement(remappingArguments, i),
                                    refs[i]);
     }
-    delete refs;
-    delete argv;
+    delete []refs;
+    delete []argv;
 
     ros::NodeHandle nh;
     nh.setParam("/robot_state_publisher/publish_frequency", 50.0);
@@ -202,8 +203,8 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_MoveBaseNati
     double res = 0.0;
     MapServer ms(map_yaml, res);
 
-    ros::Publisher chatter_pub = nh.advertise<std_msgs::String>("mb_chatter", 1000);
-    ros::Publisher cancel_pub = nh.advertise<actionlib_msgs::GoalID>("/move_base/cancel", 1000);
+    ros::Publisher chatter_pub = nh.advertise<std_msgs::String>("mb_chatter", 100);
+    ros::Publisher cancel_pub = nh.advertise<actionlib_msgs::GoalID>("/move_base/cancel", 100);
     ros::Rate loop_rate(10);
 
     nh.setParam("/move_base/base_local_planner", "dwa_local_planner/DWAPlannerROS");
@@ -241,13 +242,13 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_MoveBaseNati
         ++count;
     }
 
-    log("Exiting from JNI call.");
+    log("Exiting from movebase JNI call.");
     return 0;
 }
 
 JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_MoveBaseNativeNode_shutdown
         (JNIEnv *, jobject) {
-    log("Shutting down native node.");
+    log("Shutting down movebase native node.");
     ros::shutdown();
     running = false;
     return 0;

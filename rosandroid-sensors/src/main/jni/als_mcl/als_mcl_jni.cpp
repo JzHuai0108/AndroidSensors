@@ -1,8 +1,8 @@
+#include "als_mcl_jni.h"
 #include <android/log.h>
 #include <ros/ros.h>
+#include <als_ros/MCL.h>
 
-#include "amcl_jni.h"
-#include <amcl/amcl_node.h>
 #include "std_msgs/String.h"
 #include <sstream>
 
@@ -25,30 +25,24 @@ inline string stdStringFromjString(JNIEnv *env, jstring java_string) {
 int loop_count_ = 0;
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
-    log("AMCL library has been loaded");
-    // Return the JNI version
+    log("ALS MCL library has been loaded");
     return JNI_VERSION_1_6;
 }
 
-JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_AmclNativeNode_execute(
-        JNIEnv *env, jobject obj, jstring rosMasterUri, jstring rosHostname, jstring rosNodeName,
+JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_AlsMclNativeNode_execute
+(JNIEnv *env, jobject obj, jstring rosMasterUri, jstring rosHostname, jstring rosNodeName,
         jobjectArray remappingArguments) {
-    log("Native amcl node started.");
-
+    log("Native als mcl node started.");
     string master("__master:=" + stdStringFromjString(env, rosMasterUri));
     string hostname("__ip:=" + stdStringFromjString(env, rosHostname));
     string node_name(stdStringFromjString(env, rosNodeName));
 
-    log(master.c_str());
-    log(hostname.c_str());
-    string nnmsg = "amcl native nodename " + node_name;
+    string nnmsg = "als mcl native nodename " + node_name;
     log(nnmsg.c_str());
     // Parse remapping arguments
-    log("Before getting size");
     jsize len = env->GetArrayLength(remappingArguments);
-    log("After reading size");
 
-    std::string ni = "amcl_cpp";
+    std::string ni = "als_mcl_cpp";
 
     int argc = 0;
     const int static_params = 4;
@@ -66,10 +60,9 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_AmclNativeNo
         argv[argc] = refs[i];
         argc++;
     }
+    std::string classifier_asset_dir((char *) env->GetStringUTFChars((jstring) env->GetObjectArrayElement(remappingArguments, 0), NULL));
 
-    log("Initiating ROS...");
     ros::init(argc, &argv[0], node_name.c_str());
-    log("ROS intiated.");
 
     // Release JNI UTF characters
     for (int i = 0; i < len; i++) {
@@ -80,42 +73,50 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_AmclNativeNo
     delete []argv;
 
     ros::NodeHandle nh;
-    AmclNode amclNode;
-    // for debug purposes, we use ros::spinOnce(). Otherwise,ros::spin() without while loop is enough.
-    ros::Publisher chatter_pub = nh.advertise<std_msgs::String>("amcl_chatter", 100);
-    ros::Rate loop_rate(30);
-
+    nh.setParam("/als_mcl/mae_classifier_dir", classifier_asset_dir);
+    log("mcl mae_classifier_dir %s", classifier_asset_dir.c_str());
+    als_ros::MCL mcl;
+    double localizationHz = mcl.getLocalizationHz();
+    ros::Rate loopRate(localizationHz);
     int count = 0;
+    // for debug purposes, we use ros::spinOnce(). Otherwise,ros::spin() without while loop is enough.
+    ros::Publisher chatter_pub = nh.advertise<std_msgs::String>("als_mcl_chatter", 100);
     while (ros::ok()) {
-        /**
-         * This is a message object. You stuff it with data, and then publish it.
-         */
         std_msgs::String msg;
         std::stringstream ss;
-        ss << "amcl hello world " << count;
+        ss << "als mcl hello world " << count;
         msg.data = ss.str();
-        // ROS_INFO("%s", msg.data.c_str());
-
-        /**
-         * The publish() function is how you send messages. The parameter
-         * is the message object. The type of this object must agree with the type
-         * given as a template parameter to the advertise<>() call, as was done
-         * in the constructor above.
-         */
         chatter_pub.publish(msg);
 
         ros::spinOnce();
-        loop_rate.sleep();
+        mcl.updateParticlesByMotionModel();
+        mcl.setCanUpdateScan(false);
+        mcl.calculateLikelihoodsByMeasurementModel();
+        mcl.calculateLikelihoodsByDecisionModel();
+        mcl.calculateGLSampledPosesLikelihood();
+        mcl.calculateAMCLRandomParticlesRate();
+        mcl.calculateEffectiveSampleSize();
+        mcl.estimatePose();
+        mcl.resampleParticles();
+        mcl.publishROSMessages();
+        mcl.broadcastTF();
+        // mcl.plotLikelihoodMap();
+        mcl.setCanUpdateScan(true);
+        if (count < 5) {
+            mcl.printResult();
+        }
+        loopRate.sleep();
         ++count;
     }
 
-    log("Exiting from amcl JNI call.");
+    log("Exiting from als mcl JNI call.");
     return 0;
 }
 
-JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_AmclNativeNode_shutdown
-        (JNIEnv *, jobject) {
-    log("Shutting down amcl native node.");
-    ros::shutdown();
-    return 0;
+JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_AlsMclNativeNode_shutdown
+  (JNIEnv *, jobject) {
+  log("Shutting down als mcl native node.");
+  ros::shutdown();
+  return 0;
 }
+

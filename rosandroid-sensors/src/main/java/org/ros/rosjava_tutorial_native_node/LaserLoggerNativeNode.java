@@ -7,17 +7,17 @@ import org.ros.node.NativeNodeMain;
 import org.ros.node.Node;
 
 /**
- * Class to implement a laser scan matcher native node.
+ * Class to implement the laser scan logger native node.
  **/
-public class LsmNativeNode extends NativeNodeMain {
-    private static final String libName = "lsm_jni";
-    public static final String nodeName = "laser_scan_matcher_node";
+public class LaserLoggerNativeNode extends NativeNodeMain {
+    private static final String libName = "laser_logger_jni";
+    public static final String nodeName = "laser_logger";
     private Log mLog;
-    public LsmNativeNode() {
+    public LaserLoggerNativeNode() {
         super(libName);
     }
 
-    public LsmNativeNode(String[] remappingArguments) {
+    public LaserLoggerNativeNode(String[] remappingArguments) {
         super(libName, remappingArguments);
     }
 
@@ -30,7 +30,7 @@ public class LsmNativeNode extends NativeNodeMain {
     protected native int execute(String rosMasterUri, String rosHostname, String rosNodeName, String[] remappingArguments);
 
     @Override
-    protected native int shutdown();
+    public native int shutdown();
 
     @Override
     public void onStart(ConnectedNode connectedNode) {
@@ -41,7 +41,7 @@ public class LsmNativeNode extends NativeNodeMain {
     @Override
     public void onError(Node node, Throwable throwable) {
         if (super.executeReturnCode != 0 && mLog != null) {
-            mLog.error("LaserScanMatcherNativeNode error code: " + Integer.toString(super.executeReturnCode), throwable);
+            mLog.error("LaserLoggerNativeNode error code: " + Integer.toString(super.executeReturnCode), throwable);
         }
     }
 }
