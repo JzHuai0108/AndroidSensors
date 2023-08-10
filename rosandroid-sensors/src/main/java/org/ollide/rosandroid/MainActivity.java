@@ -81,9 +81,10 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
         add(new Pair<>("movebase_params/global_costmap_params.yaml", MoveBaseNativeNode.nodeName + "/global_costmap"));
         add(new Pair<>("movebase_params/dwa_local_planner_params_burger.yaml", MoveBaseNativeNode.nodeName + "/DWAPlannerROS"));
         add(new Pair<>("movebase_params/move_base_params.yaml", MoveBaseNativeNode.nodeName));
-        add(new Pair<>("movebase_params/als_mcl_params.yaml", AlsMclNativeNode.nodeName));
-        add(new Pair<>("movebase_params/glposesampler.yaml", GLPoseSamplerNativeNode.nodeName));
-        //        add(new Pair<>("movebase_params/amcl_params.yaml", AmclNativeNode.nodeName));
+        add(new Pair<>("movebase_params/amcl_params.yaml", AmclNativeNode.nodeName));
+//        add(new Pair<>("movebase_params/als_mcl_params.yaml", AlsMclNativeNode.nodeName));
+//        add(new Pair<>("movebase_params/glposesampler.yaml", GLPoseSamplerNativeNode.nodeName));
+
     }};
 
     private ArrayList<ParameterLoaderNode.Resource> mOpenedResources = new ArrayList<>();
@@ -195,10 +196,10 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
         Log.i(TAG, "Master URI: " + masterUri.toString());
         configureParameterServer();
         startMoveBase();
-//        startAmcl();
+        startAmcl();
         startLsm();
-        startAlsMcl();
-        startGLPoseSampler();
+//        startAlsMcl();
+//        startGLPoseSampler();
 //        startPathListener();
 
         final LocationPublisherNode locationPublisherNode = new LocationPublisherNode();
@@ -479,13 +480,15 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
 
     private void startAmcl() {
         Log.i(TAG, "Starting native amcl node wrapper...");
-
         NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic(hostName);
 
         nodeConfiguration.setMasterUri(masterUri);
         nodeConfiguration.setNodeName(AmclNativeNode.nodeName);
 
-        amclNativeNode = new AmclNativeNode();
+        String global_loc_at_start = "false";
+        String[] extraArgs = new String[1];
+        extraArgs[0] = global_loc_at_start;
+        amclNativeNode = new AmclNativeNode(extraArgs);
         nodeMainExecutor.execute(amclNativeNode, nodeConfiguration);
     }
 

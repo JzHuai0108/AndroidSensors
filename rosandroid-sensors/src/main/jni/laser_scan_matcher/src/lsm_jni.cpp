@@ -67,9 +67,7 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_LsmNativeNod
         argc++;
     }
 
-    log("Initiating ROS...");
     ros::init(argc, &argv[0], node_name.c_str());
-    log("ROS intiated.");
 
     // Release JNI UTF characters
     for (int i = 0; i < len; i++) {
@@ -92,31 +90,10 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_LsmNativeNod
     nh.setParam("/laser_scan_matcher_node/scan_range_min", 0.3);
     scan_tools::LaserScanMatcher laser_scan_matcher(nh, nh_private);
 
-    ros::Publisher chatter_pub = nh.advertise<std_msgs::String>("lsm_chatter", 100);
-    ros::Rate loop_rate(30);
-
-    int count = 0;
+    ros::Rate loop_rate(20);
     while (ros::ok()) {
-        /**
-         * This is a message object. You stuff it with data, and then publish it.
-         */
-        std_msgs::String msg;
-        std::stringstream ss;
-        ss << "lsm hello world " << count;
-        msg.data = ss.str();
-        // ROS_INFO("%s", msg.data.c_str());
-
-        /**
-         * The publish() function is how you send messages. The parameter
-         * is the message object. The type of this object must agree with the type
-         * given as a template parameter to the advertise<>() call, as was done
-         * in the constructor above.
-         */
-        chatter_pub.publish(msg);
-
         ros::spinOnce();
         loop_rate.sleep();
-        ++count;
     }
 
     log("Exiting from lsm JNI call.");

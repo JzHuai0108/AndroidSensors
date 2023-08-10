@@ -140,9 +140,7 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_MoveBaseNati
     std::string urdf_filename((char *) env->GetStringUTFChars((jstring) env->GetObjectArrayElement(remappingArguments, 0), NULL));
     std::string map_yaml((char *) env->GetStringUTFChars((jstring) env->GetObjectArrayElement(remappingArguments, 1), NULL));
 
-    log("Initiating ROS...");
     ros::init(argc, &argv[0], node_name.c_str());
-    log("ROS intiated.");
 
     // Release JNI UTF characters
     for (int i = 0; i < len; i++) {
@@ -203,7 +201,6 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_MoveBaseNati
     double res = 0.0;
     MapServer ms(map_yaml, res);
 
-    ros::Publisher chatter_pub = nh.advertise<std_msgs::String>("mb_chatter", 100);
     ros::Publisher cancel_pub = nh.advertise<actionlib_msgs::GoalID>("/move_base/cancel", 100);
     ros::Rate loop_rate(10);
 
@@ -218,28 +215,10 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_MoveBaseNati
     move_base::MoveBase move_base(buffer);
     log("movebase running.");
 
-    int count = 0;
     while (ros::ok()) {
-        /**
-         * This is a message object. You stuff it with data, and then publish it.
-         */
-        std_msgs::String msg;
-        std::stringstream ss;
-        ss << "movebase hello world " << count;
-        msg.data = ss.str();
-        // ROS_INFO("%s", msg.data.c_str());
-
-        /**
-         * The publish() function is how you send messages. The parameter
-         * is the message object. The type of this object must agree with the type
-         * given as a template parameter to the advertise<>() call, as was done
-         * in the constructor above.
-         */
-        chatter_pub.publish(msg);
         cancelGoalCheck(cancel_pub);
         ros::spinOnce();
         loop_rate.sleep();
-        ++count;
     }
 
     log("Exiting from movebase JNI call.");

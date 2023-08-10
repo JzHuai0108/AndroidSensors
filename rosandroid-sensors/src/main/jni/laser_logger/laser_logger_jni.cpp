@@ -81,18 +81,10 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_LaserLoggerN
 
    bag.open(bagpath, rosbag::bagmode::Write);
    ros::Subscriber sub = nh.subscribe("/scan", 100, laserScanCallback);
-   ros::Publisher chatter_pub = nh.advertise<std_msgs::String>("logger_chatter", 100);
    ros::Rate loop_rate(15);
-   int count = 0;
    while (ros::ok()) {
-       std_msgs::String msg;
-       std::stringstream ss;
-       ss << "laserlogger hello world " << count;
-       msg.data = ss.str();
-       chatter_pub.publish(msg);
        ros::spinOnce();
        loop_rate.sleep();
-       ++count;
    }
    log("Exiting from laser logger JNI call.");
    return 0;

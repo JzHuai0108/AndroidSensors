@@ -44,9 +44,7 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_AmclNativeNo
     string nnmsg = "amcl native nodename " + node_name;
     log(nnmsg.c_str());
     // Parse remapping arguments
-    log("Before getting size");
     jsize len = env->GetArrayLength(remappingArguments);
-    log("After reading size");
 
     std::string ni = "amcl_cpp";
 
@@ -66,10 +64,12 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_AmclNativeNo
         argv[argc] = refs[i];
         argc++;
     }
+    std::string global_loc_at_start((char *) env->GetStringUTFChars((jstring) env->GetObjectArrayElement(remappingArguments, 0), NULL));
+    bool trigger_global_localization = false;
+    trigger_global_localization = (global_loc_at_start == "true" || global_loc_at_start == "True" ||
+        global_loc_at_start == "TRUE" || global_loc_at_start == "1");
 
-    log("Initiating ROS...");
     ros::init(argc, &argv[0], node_name.c_str());
-    log("ROS intiated.");
 
     // Release JNI UTF characters
     for (int i = 0; i < len; i++) {
@@ -81,32 +81,19 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_AmclNativeNo
 
     ros::NodeHandle nh;
     AmclNode amclNode;
+
+    if (trigger_global_localization) {
+        ROS_INFO("Amcl node: triggering global localization at start.");
+        std_srvs::Empty empty_srv;
+        amclNode.globalLocalizationCallback(empty_srv.request, empty_srv.response);
+    } else {
+        ROS_INFO("Amcl node: NOT triggering global localization at start.");
+    }
     // for debug purposes, we use ros::spinOnce(). Otherwise,ros::spin() without while loop is enough.
-    ros::Publisher chatter_pub = nh.advertise<std_msgs::String>("amcl_chatter", 100);
-    ros::Rate loop_rate(30);
-
-    int count = 0;
+    ros::Rate loop_rate(20);
     while (ros::ok()) {
-        /**
-         * This is a message object. You stuff it with data, and then publish it.
-         */
-        std_msgs::String msg;
-        std::stringstream ss;
-        ss << "amcl hello world " << count;
-        msg.data = ss.str();
-        // ROS_INFO("%s", msg.data.c_str());
-
-        /**
-         * The publish() function is how you send messages. The parameter
-         * is the message object. The type of this object must agree with the type
-         * given as a template parameter to the advertise<>() call, as was done
-         * in the constructor above.
-         */
-        chatter_pub.publish(msg);
-
         ros::spinOnce();
         loop_rate.sleep();
-        ++count;
     }
 
     log("Exiting from amcl JNI call.");
