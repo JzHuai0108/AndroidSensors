@@ -62,7 +62,7 @@ ndk-build
 
 # Alternatively on windows
 cd C:\Users\jhuai\AppData\Local\Android\Sdk\ndk\android-ndk-r18b
-$env NDK_RPOJECT_PATH = '/media/jhuai/docker/roscpp_android_ndk/AndroidSensors/rosandroid-sensors/src/main'
+$env:NDK_RPOJECT_PATH = '/media/jhuai/docker/roscpp_android_ndk/AndroidSensors/rosandroid-sensors/src/main'
 .\ndk-build.cmd
 
 ```
