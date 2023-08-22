@@ -79,8 +79,11 @@ The jni folder's structure is
 
 Error: could not start aarch64-linux-android-strip. No such file or directory
 The ndk r23c does not ship with this binary file, so copy it from another ndk version say r21e,
-# cp /home/jhuai/Android/android-ndk-r21e/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android-strip \
-# /home/jhuai/Android/android-ndk-r23c/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android-strip
+```
+cp /home/jhuai/Android/android-ndk-r21e/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android-strip \
+ /home/jhuai/Android/android-ndk-r23c/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android-strip
+```
+I think this is a hack and the proper solution is to upgrade gradle. But it needs some digging.
 
 5. Copy the dependency .so files from /roscpp_android_ndk/ros_android/output/target/lib/ to 
 /roscpp_android_ndk/AndroidSensors/rosandroid-sensors/src/main/jniLibs/arm64-v8a/.
