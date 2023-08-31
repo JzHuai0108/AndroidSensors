@@ -144,6 +144,9 @@ rostopic echo /chatter
 
 The above errors have been discussed [here](https://github.com/rosjava/rosjava_core/pull/273).
 
+3. Duplicate resources
+Refer to [here](https://stackoverflow.com/questions/75015347/use-different-versions-of-so-files-in-different-modules-in-android-like-libc/77012643#77012643)
+
 ### Contribution ###
 
 Feel free to contribute to this project by either raising issues or handing in pull requests.

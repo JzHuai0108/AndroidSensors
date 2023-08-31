@@ -6,7 +6,8 @@
 
   update_frequency: 10.0
   publish_frequency: 10.0
-  transform_tolerance: 0.5  
+  transform_tolerance: 0.5
+  wait_transform_time: 10.0
 
   static_map: false  
   rolling_window: true

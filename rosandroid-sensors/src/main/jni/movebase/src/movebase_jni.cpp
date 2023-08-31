@@ -212,11 +212,25 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_MoveBaseNati
     tf2_ros::Buffer buffer(ros::Duration(10));
     tf2_ros::TransformListener tf(buffer);
     log("movebase starting.");
-    move_base::MoveBase move_base(buffer);
-    log("movebase running.");
 
+    move_base::MoveBase move_base(buffer, false);
+    bool inited = move_base.initialize();
+    if (inited) {
+        log("MoveBase initialized.");
+    } else {
+        log("MoveBase failed to initialize!");
+        return 1;
+    }
+
+    int count = 0;
     while (ros::ok()) {
         cancelGoalCheck(cancel_pub);
+        if (count == 50) {
+            move_base.clearCostmapsUnsafe();
+            log("Movebase clearing costmaps!");
+            count = 0;
+        }
+        ++count;
         ros::spinOnce();
         loop_rate.sleep();
     }
