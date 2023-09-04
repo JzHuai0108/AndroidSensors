@@ -153,12 +153,13 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_MoveBaseNati
     ros::NodeHandle nh;
     nh.setParam("/robot_state_publisher/publish_frequency", 50.0);
     nh.setParam("/robot_state_publisher/tf_prefix", "");
-
+    int returncode;
     // startRobotStatePublisher
     std::ifstream in(urdf_filename, std::ios::in | std::ios::binary);
     if (!in.good()) {
         ROS_ERROR("Failed to open urdf file %s.", urdf_filename.c_str());
-        return -1;
+        returncode = 5;
+        return returncode;
     }
     in.seekg(0, std::ios::end);
     std::string urdf_xml;
@@ -171,13 +172,15 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_MoveBaseNati
     urdf::Model model;
     if (!model.initParam("robot_description")) {
         ROS_ERROR("Failed to init model from robot_description");
-        return -1;
+        returncode = 4;
+        return returncode;
     }
 
     KDL::Tree tree;
     if (!kdl_parser::treeFromUrdfModel(model, tree)) {
         ROS_ERROR("Failed to extract kdl tree from xml robot description");
-        return -1;
+        returncode = 3;
+        return returncode;
     }
 
     MimicMap mimic;
@@ -194,7 +197,8 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_MoveBaseNati
     std::ifstream map_in(map_yaml, std::ios::in | std::ios::binary);
     if (!map_in.good()) {
         ROS_ERROR("Failed to open map yaml %s.", map_yaml.c_str());
-        return -1;
+        returncode = 2;
+        return returncode;
     } else {
         ROS_INFO("Map yaml %s is good", map_yaml.c_str());
     }
@@ -219,14 +223,15 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_MoveBaseNati
         log("MoveBase initialized.");
     } else {
         log("MoveBase failed to initialize!");
-        return 1;
+        returncode = 1;
+        return returncode;
     }
 
     int count = 0;
     while (ros::ok()) {
         cancelGoalCheck(cancel_pub);
         if (count == 50) {
-            move_base.clearCostmapsUnsafe();
+            move_base.clearLayerUnsafe("global_costmap/obstacle_layer");
             log("Movebase clearing costmaps!");
             count = 0;
         }
@@ -236,7 +241,8 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_MoveBaseNati
     }
 
     log("Exiting from movebase JNI call.");
-    return 0;
+    returncode = 0;
+    return returncode;
 }
 
 JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_MoveBaseNativeNode_shutdown
