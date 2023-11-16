@@ -45,12 +45,10 @@ import org.ros.node.NodeConfiguration;
 import org.ros.node.NodeMainExecutor;
 import org.ros.node.NodeListener;
 
-import org.ros.rosjava_tutorial_native_node.GLPoseSamplerNativeNode;
 import org.ros.rosjava_tutorial_native_node.MoveBaseNativeNode;
 import org.ros.rosjava_tutorial_native_node.LsmNativeNode;
 import org.ros.rosjava_tutorial_native_node.AmclNativeNode;
 import org.ros.rosjava_tutorial_native_node.LaserLoggerNativeNode;
-import org.ros.rosjava_tutorial_native_node.AlsMclNativeNode;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -69,9 +67,7 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
         System.loadLibrary("movebase_jni");
         System.loadLibrary("lsm_jni");
         System.loadLibrary("amcl_jni");
-        System.loadLibrary("als_mcl_jni");
         System.loadLibrary("laser_logger_jni");
-        System.loadLibrary("glposesampler_jni");
     }
 
     private static ArrayList<Pair<String, String>> mResourcesToLoad = new ArrayList<Pair<String, String>>() {{
@@ -82,8 +78,6 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
         add(new Pair<>("movebase_params/dwa_local_planner_params_burger.yaml", MoveBaseNativeNode.nodeName + "/DWAPlannerROS"));
         add(new Pair<>("movebase_params/move_base_params.yaml", MoveBaseNativeNode.nodeName));
         add(new Pair<>("movebase_params/amcl_params.yaml", AmclNativeNode.nodeName));
-//        add(new Pair<>("movebase_params/als_mcl_params.yaml", AlsMclNativeNode.nodeName));
-//        add(new Pair<>("movebase_params/glposesampler.yaml", GLPoseSamplerNativeNode.nodeName));
 
     }};
 
@@ -99,8 +93,6 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
     private AmclNativeNode amclNativeNode;
 
     private LaserLoggerNativeNode laserLoggerNativeNode;
-    private AlsMclNativeNode alsMclNativeNode;
-    private GLPoseSamplerNativeNode glPoseSamplerNativeNode;
     private PathListenerNode pathListenerNode;
     private ParameterLoaderNode mParameterLoaderNode;
 
@@ -198,8 +190,6 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
         startMoveBase();
         startAmcl();
         startLsm();
-//        startAlsMcl();
-//        startGLPoseSampler();
 //        startPathListener();
 
         final LocationPublisherNode locationPublisherNode = new LocationPublisherNode();
@@ -490,27 +480,6 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
         extraArgs[0] = global_loc_at_start;
         amclNativeNode = new AmclNativeNode(extraArgs);
         nodeMainExecutor.execute(amclNativeNode, nodeConfiguration);
-    }
-
-    private void startAlsMcl() {
-        Log.i(TAG, "Starting native als mcl node wrapper...");
-        NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic(hostName);
-        nodeConfiguration.setMasterUri(masterUri);
-        nodeConfiguration.setNodeName(AlsMclNativeNode.nodeName);
-        String extClassifierPath = copyClassifierAsset();
-        String[] extraArgs = new String[1];
-        extraArgs[0] = extClassifierPath + "/";
-        alsMclNativeNode = new AlsMclNativeNode(extraArgs);
-        nodeMainExecutor.execute(alsMclNativeNode, nodeConfiguration);
-    }
-
-    private void startGLPoseSampler() {
-        Log.i(TAG, "Starting native glposesampler node wrapper...");
-        NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic(hostName);
-        nodeConfiguration.setMasterUri(masterUri);
-        nodeConfiguration.setNodeName(GLPoseSamplerNativeNode.nodeName);
-        glPoseSamplerNativeNode = new GLPoseSamplerNativeNode();
-        nodeMainExecutor.execute(glPoseSamplerNativeNode, nodeConfiguration);
     }
 
     private void startPathListener() {
