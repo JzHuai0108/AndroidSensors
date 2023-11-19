@@ -9,7 +9,7 @@
   publish_frequency: 10.0
   transform_tolerance: 0.5
   can_transform_timeout: 0.3
-  wait_transform_time: 20.0
+  wait_transform_time: 100.0  # enlarge this value if MoveBase failed to initialize!
   static_map: true
 
   plugins:

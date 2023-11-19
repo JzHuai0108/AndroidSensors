@@ -90,9 +90,6 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_LivoxRosDriv
   livox_ros::DriverNode livox_node;
   DRIVER_INFO(livox_node, "Livox Ros Driver2 Version: %s", LIVOX_ROS_DRIVER2_VERSION_STRING);
 
-  int count = 0;
-  ros::Publisher chatter_pub = livox_node.GetNode().advertise<std_msgs::String>("livox_ros_driver2_chatter", 100);
-
   /** Init default system parameter */
   int xfer_format = kPointCloud2Msg;
   int multi_topic = 0;
@@ -141,17 +138,10 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_LivoxRosDriv
   livox_node.imudata_poll_thread_ = std::make_shared<std::thread>(&DriverNode::ImuDataPollThread, &livox_node);
 
   // for debug purposes, we use ros::spinOnce(). Otherwise,ros::spin() without while loop is enough.
-  ros::Rate loop_rate(100);
+  ros::Rate loop_rate(50);
   while (ros::ok()) {
-      std_msgs::String msg;
-      std::stringstream ss;
-      ss << "livox_ros_driver2 hello " << count;
-      msg.data = ss.str();
-      chatter_pub.publish(msg);
-
       ros::spinOnce();
       loop_rate.sleep();
-      ++count;
   }
 
   log("Exiting from livox ros driver2 JNI call.");

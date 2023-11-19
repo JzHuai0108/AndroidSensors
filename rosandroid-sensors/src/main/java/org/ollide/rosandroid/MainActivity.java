@@ -197,12 +197,12 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
 
         Log.i(TAG, "Master URI: " + masterUri.toString());
         configureParameterServer();
-        startMoveBase();
 //        startAmcl();
 //        startLsm();
         startLivoxRosDriver2();
         startFastLio();
 //        startPathListener();
+        startMoveBase();
 
         final LocationPublisherNode locationPublisherNode = new LocationPublisherNode();
         ImuPublisherNode imuPublisherNode = new ImuPublisherNode();

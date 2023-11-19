@@ -79,7 +79,6 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_FastLioNativ
   delete []argv;
 
   ros::NodeHandle nh;
-
   std::shared_ptr<GSMWrap> gsm(new GSMWrap(nh));
   std::string fn_path = pcdmap_path.substr(0, pcdmap_path.find_last_of('/')) + "/";
   gsm->LoadMap(fn_path);
@@ -95,28 +94,20 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_FastLioNativ
     rate.sleep();
   }
   gsm.reset(); // remove the gsm node.
-  int count = 0;
-  ros::Publisher chatter_pub = nh.advertise<std_msgs::String>("fastlio_chatter", 100);
-  nh.setParam("/pcdmap", pcdmap_path);
   std::vector<double> position{map_T_lidar.pose.position.x, map_T_lidar.pose.position.y, map_T_lidar.pose.position.z};
   nh.setParam("/mapping/init_world_t_lidar", position);
   std::vector<double> qxyzw{map_T_lidar.pose.orientation.x, map_T_lidar.pose.orientation.y, map_T_lidar.pose.orientation.z, map_T_lidar.pose.orientation.w};
   nh.setParam("/mapping/init_world_qxyzw_lidar", qxyzw);
 
+  nh.setParam("/pcdmap", pcdmap_path);
+
   fastlio::LaserMapping node(nh);
   bool status = ros::ok();
   while (status) {
-      std_msgs::String msg;
-      std::stringstream ss;
-      ss << "fastlio hello " << count;
-      msg.data = ss.str();
-      chatter_pub.publish(msg);
-
       ros::spinOnce();
       node.spinOnce();
       status = ros::ok();
       rate.sleep();
-      ++count;
   }
   node.saveAndClose();
 
