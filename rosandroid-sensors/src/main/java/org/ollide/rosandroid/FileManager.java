@@ -10,6 +10,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 
 public class FileManager {
     private static final String TAG = FileManager.class.getSimpleName();
@@ -80,6 +81,17 @@ public class FileManager {
                 String outFilePath = outDirPath + "/" + filename;
                 copyAssetFile(assetManager, assetFileRelPath, outFilePath);
             }
+        }
+    }
+
+    public static void writeToFile(String data, File outputfile) {
+        try {
+            OutputStreamWriter outputStreamWriter = new OutputStreamWriter(new FileOutputStream(outputfile));
+            outputStreamWriter.write(data);
+            outputStreamWriter.close();
+        }
+        catch (IOException e) {
+            Log.e("Exception", "File write failed: " + e.toString());
         }
     }
 }

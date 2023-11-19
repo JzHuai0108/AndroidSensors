@@ -22,16 +22,16 @@
 
 using namespace std;
 
-void log(const char *msg, ...) {
+inline void log(const char *msg, ...) {
     va_list args;
     va_start(args, msg);
     __android_log_vprint(ANDROID_LOG_INFO, "Native_MoveBase", msg, args);
     va_end(args);
 }
 
-inline string stdStringFromjString(JNIEnv *env, jstring java_string) {
+inline std::string stdStringFromjString(JNIEnv *env, jstring java_string) {
     const char *tmp = env->GetStringUTFChars(java_string, NULL);
-    string out(tmp);
+    std::string out(tmp);
     env->ReleaseStringUTFChars(java_string, tmp);
     return out;
 }

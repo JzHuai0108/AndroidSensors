@@ -31,7 +31,7 @@ compile, therefore you can not only use Ubuntu but also Windows or Mac.
 1. Build [ros_android](https://github.com/JzHuai0108/roscpp_android.git).
 branch kinetic.
 
-2. *This step can be skipped.* create the header chatter_jni.h for the MoveBaseNativeNode java class.
+2. *This step can be skipped.* create the header movebase_jni.h for the MoveBaseNativeNode java class.
 Following instructions [here](http://wiki.ros.org/android_ndk/Tutorials/WrappingNativeRosjavaNode).
 ```
 #export CLASSPATH=$CLASSPATH:/home/somebody/lib/java/a.jar:/home/somebody/lib/java/b.jar
@@ -62,7 +62,7 @@ ndk-build
 
 # Alternatively on windows
 cd C:\Users\jhuai\AppData\Local\Android\Sdk\ndk\android-ndk-r18b
-$env:NDK_RPOJECT_PATH = '/media/jhuai/docker/roscpp_android_ndk/AndroidSensors/rosandroid-sensors/src/main'
+$env:NDK_RPOJECT_PATH='/media/jhuai/docker/roscpp_android_ndk/AndroidSensors/rosandroid-sensors/src/main'
 .\ndk-build.cmd
 
 ```
@@ -72,9 +72,9 @@ The jni folder's structure is
 ├── Android.mk
 ├── Application.mk
 ├── include
-│   └── chatter_jni.h
+│   └── movebase_jni.h
 └── src
-    └── chatter_jni.cpp
+    └── movebase_jni.cpp
 ```
 
 Error: could not start aarch64-linux-android-strip. No such file or directory
@@ -87,6 +87,8 @@ I think this is a hack and the proper solution is to upgrade gradle. But it need
 
 5. Copy the dependency .so files from /roscpp_android_ndk/ros_android/output/target/lib/ to 
 /roscpp_android_ndk/AndroidSensors/rosandroid-sensors/src/main/jniLibs/arm64-v8a/.
+Also copy the libomp.so from /home/jhuai/Android/android-ndk-r23c/toolchains/llvm/prebuilt/linux-x86_64/lib64/clang/12.0.9/lib/linux/aarch64/libomp.so
+to /roscpp_android_ndk/AndroidSensors/rosandroid-sensors/src/main/jniLibs/arm64-v8a/.
 
 Then build the apk in Android studio. Run the app on an Android phone.
 Connect to a local (private) WiFi network. A public WiFi network may not work.

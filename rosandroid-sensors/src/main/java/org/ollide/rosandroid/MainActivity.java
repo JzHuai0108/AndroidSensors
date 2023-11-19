@@ -48,6 +48,8 @@ import org.ros.node.NodeListener;
 import org.ros.rosjava_tutorial_native_node.MoveBaseNativeNode;
 import org.ros.rosjava_tutorial_native_node.LsmNativeNode;
 import org.ros.rosjava_tutorial_native_node.AmclNativeNode;
+import org.ros.rosjava_tutorial_native_node.FastLioNativeNode;
+import org.ros.rosjava_tutorial_native_node.LivoxRosDriver2NativeNode;
 import org.ros.rosjava_tutorial_native_node.LaserLoggerNativeNode;
 
 import java.io.ByteArrayInputStream;
@@ -68,6 +70,8 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
         System.loadLibrary("lsm_jni");
         System.loadLibrary("amcl_jni");
         System.loadLibrary("laser_logger_jni");
+        System.loadLibrary("fastlio_jni");
+        System.loadLibrary("livox_ros_driver2_jni");
     }
 
     private static ArrayList<Pair<String, String>> mResourcesToLoad = new ArrayList<Pair<String, String>>() {{
@@ -77,8 +81,11 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
         add(new Pair<>("movebase_params/global_costmap_params.yaml", MoveBaseNativeNode.nodeName + "/global_costmap"));
         add(new Pair<>("movebase_params/dwa_local_planner_params_burger.yaml", MoveBaseNativeNode.nodeName + "/DWAPlannerROS"));
         add(new Pair<>("movebase_params/move_base_params.yaml", MoveBaseNativeNode.nodeName));
-        add(new Pair<>("movebase_params/amcl_params.yaml", AmclNativeNode.nodeName));
-
+//        add(new Pair<>("movebase_params/amcl_params.yaml", AmclNativeNode.nodeName));
+        add(new Pair<String, String>("movebase_params/fastlio2_params.yaml", "/"));
+        // We use the global namespace for fastlio2.
+        add(new Pair<String, String>("movebase_params/livox_ros_driver2_params.yaml", "/"));
+        // We use the global namespace for livox ros driver2.
     }};
 
     private ArrayList<ParameterLoaderNode.Resource> mOpenedResources = new ArrayList<>();
@@ -91,6 +98,9 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
 
     private LsmNativeNode lsmNativeNode;
     private AmclNativeNode amclNativeNode;
+
+    private FastLioNativeNode fastlioNativeNode;
+    private LivoxRosDriver2NativeNode livoxNativeNode;
 
     private LaserLoggerNativeNode laserLoggerNativeNode;
     private PathListenerNode pathListenerNode;
@@ -188,8 +198,10 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
         Log.i(TAG, "Master URI: " + masterUri.toString());
         configureParameterServer();
         startMoveBase();
-        startAmcl();
-        startLsm();
+//        startAmcl();
+//        startLsm();
+        startLivoxRosDriver2();
+        startFastLio();
 //        startPathListener();
 
         final LocationPublisherNode locationPublisherNode = new LocationPublisherNode();
@@ -371,20 +383,39 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
                 }});
     }
 
-    private String copySampleMap() {
+    private String checkPointCloudPcdMap() {
+        String extdir = getExternalFilesDir(
+                Environment.getDataDirectory().getAbsolutePath()).getAbsolutePath();
+        File mapFile = new File(extdir, "maps/map.pcd");
+        // we do not copy the pgm here because the pgm from the apk is corrupt and unable to be loaded by the map_server.
+        if (!mapFile.exists()) {
+            Log.e(TAG, "Error cannot find point cloud map: " + mapFile.getAbsolutePath() +
+                    "\n.Push them into the folder with adb push.");
+        }
+        return mapFile.getAbsolutePath();
+    }
+
+    private String checkOccupancyGridMap() {
         // Create the sample map in the app data dir
         String extdir = getExternalFilesDir(
                 Environment.getDataDirectory().getAbsolutePath()).getAbsolutePath();
-        File mapFile = new File(extdir, "lsm10_909_0613200.yaml");
+        File mapFile = new File(extdir, "maps/map.yaml");
         // we do not copy the pgm here because the pgm from the apk is corrupt and unable to be loaded by the map_server.
+        // The pgm file should be put into the /sdcard/Android/data/org.ollide.rosandroid/files/data folder by adb push.
         if (!mapFile.exists()) {
-            try {
-                FileManager.copyResource(getResources(), R.raw.lsm10_909_06132100, mapFile);
-            } catch (IOException e) {
-                Log.e(TAG, "Error copying sample map: " + e.getMessage(), e);
-            }
+            Log.e(TAG, "Error cannot find occupancy grid map: " + mapFile.getAbsolutePath() +
+                    "\n.Push them into the folder with adb push.");
         }
         return mapFile.getAbsolutePath();
+    }
+
+    private String createLidarUserConfig(String hostip, String lidarip) {
+        String extdir = getExternalFilesDir(
+                Environment.getDataDirectory().getAbsolutePath()).getAbsolutePath();
+        File configFile = new File(extdir, "MID360_config.json");
+        String config = LivoxRosDriver2NativeNode.createLidarConfig(hostip, lidarip);
+        FileManager.writeToFile(config, configFile);
+        return configFile.getAbsolutePath();
     }
 
     private String copyBurgerUrdf() {
@@ -435,7 +466,7 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
         nodeConfiguration.setNodeName(MoveBaseNativeNode.nodeName);
 
         String burgerUrdf = copyBurgerUrdf();
-        String mapYaml = copySampleMap();
+        String mapYaml = checkOccupancyGridMap();
         String[] extraArgs = new String[2];
         extraArgs[0] = burgerUrdf;
         extraArgs[1] = mapYaml;
@@ -480,6 +511,34 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
         extraArgs[0] = global_loc_at_start;
         amclNativeNode = new AmclNativeNode(extraArgs);
         nodeMainExecutor.execute(amclNativeNode, nodeConfiguration);
+    }
+
+    private void startFastLio() {
+        Log.i(TAG, "Starting native fastlio node wrapper...");
+        NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic(hostName);
+
+        nodeConfiguration.setMasterUri(masterUri);
+        nodeConfiguration.setNodeName(FastLioNativeNode.nodeName);
+        String pcdmappath = checkPointCloudPcdMap();
+        String[] extraArgs = new String[1];
+        extraArgs[0] = pcdmappath;
+        fastlioNativeNode = new FastLioNativeNode(extraArgs);
+        nodeMainExecutor.execute(fastlioNativeNode, nodeConfiguration);
+    }
+
+    private void startLivoxRosDriver2() {
+        Log.i(TAG, "Starting native livox ros driver2 node wrapper...");
+        NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic(hostName);
+
+        nodeConfiguration.setMasterUri(masterUri);
+        nodeConfiguration.setNodeName(LivoxRosDriver2NativeNode.nodeName);
+        String hostip = "192.168.217.234";
+        String lidarip = "192.168.217.121";
+        String userconfigpath = createLidarUserConfig(hostip, lidarip);
+        String[] extraArgs = new String[1];
+        extraArgs[0] = userconfigpath;
+        livoxNativeNode = new LivoxRosDriver2NativeNode(extraArgs);
+        nodeMainExecutor.execute(livoxNativeNode, nodeConfiguration);
     }
 
     private void startPathListener() {
