@@ -1,14 +1,14 @@
 # adapted from catkin_ws/src/FAST_LIO/launch/loc_mid360.launch
 
 # pcdmap will be passed via function call
-locmode: true
+locmode: false
 showmap: false
 feature_extract_enable: false
-point_filter_num: 3
+point_filter_num: 4
 max_iteration: 4
 filter_size_surf: 0.5
-filter_size_map: 0.2 # enlarge this value for better efficiency, reduce this value for better accuracy
-cube_side_length: 500
+filter_size_map: 0.3 # enlarge this value for better efficiency, reduce this value for better accuracy
+cube_side_length: 600
 runtime_pos_log_enable: false  # enable to check the timings.
 
 # The below are copied from mid360.yaml of fastlio2.

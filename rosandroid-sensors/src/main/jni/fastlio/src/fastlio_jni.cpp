@@ -3,7 +3,9 @@
 
 #include <sstream>
 #include <ros/ros.h>
-#include "std_msgs/String.h"
+#include <std_msgs/String.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include <nav_msgs/Odometry.h>
 
 #include "fastlio_jni.h"
 #include "fast_lio/fastlio/laserMapping.hpp"
@@ -21,6 +23,32 @@ inline std::string stdStringFromjString(JNIEnv *env, jstring java_string) {
     std::string out(tmp);
     env->ReleaseStringUTFChars(java_string, tmp);
     return out;
+}
+
+ros::Publisher global_pose_publisher;
+geometry_msgs::PoseStamped map_T_lidar;
+
+void laserOdometryCallback(const nav_msgs::Odometry::ConstPtr &laserOdometry) {
+    tf::Transform map_T_odom(tf::Quaternion(map_T_lidar.pose.orientation.x, map_T_lidar.pose.orientation.y,
+                map_T_lidar.pose.orientation.z, map_T_lidar.pose.orientation.w),
+                tf::Vector3(map_T_lidar.pose.position.x, map_T_lidar.pose.position.y, map_T_lidar.pose.position.z));
+    tf::Transform odom_T_basefootprint(tf::Quaternion(laserOdometry->pose.pose.orientation.x, laserOdometry->pose.pose.orientation.y,
+                laserOdometry->pose.pose.orientation.z, laserOdometry->pose.pose.orientation.w),
+                tf::Vector3(laserOdometry->pose.pose.position.x, laserOdometry->pose.pose.position.y, laserOdometry->pose.pose.position.z));
+    tf::Transform map_T_basefootprint = map_T_odom * odom_T_basefootprint;
+
+    geometry_msgs::PoseWithCovarianceStamped p;
+    p.header.frame_id = "map";
+    p.header.stamp = ros::Time::now();
+    p.pose.pose.position.x = map_T_basefootprint.getOrigin().getX();
+    p.pose.pose.position.y = map_T_basefootprint.getOrigin().getY();
+    p.pose.pose.position.z = map_T_basefootprint.getOrigin().getZ();
+    p.pose.pose.orientation.x = map_T_basefootprint.getRotation().getX();
+    p.pose.pose.orientation.y = map_T_basefootprint.getRotation().getY();
+    p.pose.pose.orientation.z = map_T_basefootprint.getRotation().getZ();
+    p.pose.pose.orientation.w = map_T_basefootprint.getRotation().getW();
+    p.pose.covariance = laserOdometry->pose.covariance;
+    global_pose_publisher.publish(p);
 }
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
@@ -83,7 +111,7 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_FastLioNativ
   std::string fn_path = pcdmap_path.substr(0, pcdmap_path.find_last_of('/')) + "/";
   gsm->LoadMap(fn_path);
   ros::Rate rate(30);
-  geometry_msgs::PoseStamped map_T_lidar;
+
   while (ros::ok()) {
     if (gsm->loc_status()) {
       map_T_lidar = gsm->init_pose();
@@ -102,9 +130,19 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_FastLioNativ
   nh.setParam("/pcdmap", pcdmap_path);
 
   fastlio::LaserMapping node(nh);
+  global_pose_publisher = nh.advertise<geometry_msgs::PoseWithCovarianceStamped>("/amcl_pose", 2, true);
+
+  ros::Subscriber sub_lidar_odom = nh.subscribe("/Odometry", 1, &laserOdometryCallback);
   bool status = ros::ok();
+  tf::TransformBroadcaster tf_broadcaster;
   while (status) {
       ros::spinOnce();
+      tf::Transform map_T_odom(tf::Quaternion(map_T_lidar.pose.orientation.x, map_T_lidar.pose.orientation.y,
+            map_T_lidar.pose.orientation.z, map_T_lidar.pose.orientation.w),
+            tf::Vector3(map_T_lidar.pose.position.x, map_T_lidar.pose.position.y, map_T_lidar.pose.position.z));
+      // since we use the same map_T_odom, we postdate it to avoid global plan to controller tf transform extrapolation.
+      tf::StampedTransform map_T_odom_stamped(map_T_odom, ros::Time::now() + ros::Duration(0.5), "map", "odom");
+      tf_broadcaster.sendTransform(map_T_odom_stamped);
       node.spinOnce();
       status = ros::ok();
       rate.sleep();
