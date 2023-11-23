@@ -27,11 +27,9 @@ inline std::string stdStringFromjString(JNIEnv *env, jstring java_string) {
 
 ros::Publisher global_pose_publisher;
 geometry_msgs::PoseStamped map_T_lidar;
+tf::Transform map_T_odom;
 
 void laserOdometryCallback(const nav_msgs::Odometry::ConstPtr &laserOdometry) {
-    tf::Transform map_T_odom(tf::Quaternion(map_T_lidar.pose.orientation.x, map_T_lidar.pose.orientation.y,
-                map_T_lidar.pose.orientation.z, map_T_lidar.pose.orientation.w),
-                tf::Vector3(map_T_lidar.pose.position.x, map_T_lidar.pose.position.y, map_T_lidar.pose.position.z));
     tf::Transform odom_T_basefootprint(tf::Quaternion(laserOdometry->pose.pose.orientation.x, laserOdometry->pose.pose.orientation.y,
                 laserOdometry->pose.pose.orientation.z, laserOdometry->pose.pose.orientation.w),
                 tf::Vector3(laserOdometry->pose.pose.position.x, laserOdometry->pose.pose.position.y, laserOdometry->pose.pose.position.z));
@@ -126,20 +124,25 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_FastLioNativ
   nh.setParam("/mapping/init_world_t_lidar", position);
   std::vector<double> qxyzw{map_T_lidar.pose.orientation.x, map_T_lidar.pose.orientation.y, map_T_lidar.pose.orientation.z, map_T_lidar.pose.orientation.w};
   nh.setParam("/mapping/init_world_qxyzw_lidar", qxyzw);
-
   nh.setParam("/pcdmap", pcdmap_path);
+
+  bool locmode = false;
+  nh.param<bool>("locmode", locmode, false);
 
   fastlio::LaserMapping node(nh);
   global_pose_publisher = nh.advertise<geometry_msgs::PoseWithCovarianceStamped>("/amcl_pose", 2, true);
-
   ros::Subscriber sub_lidar_odom = nh.subscribe("/Odometry", 1, &laserOdometryCallback);
   bool status = ros::ok();
   tf::TransformBroadcaster tf_broadcaster;
   while (status) {
       ros::spinOnce();
-      tf::Transform map_T_odom(tf::Quaternion(map_T_lidar.pose.orientation.x, map_T_lidar.pose.orientation.y,
+      if (locmode) {
+        map_T_odom = tf::Transform(tf::Quaternion(0, 0, 0, 1), tf::Vector3(0, 0, 0));
+      } else {
+        map_T_odom = tf::Transform(tf::Quaternion(map_T_lidar.pose.orientation.x, map_T_lidar.pose.orientation.y,
             map_T_lidar.pose.orientation.z, map_T_lidar.pose.orientation.w),
             tf::Vector3(map_T_lidar.pose.position.x, map_T_lidar.pose.position.y, map_T_lidar.pose.position.z));
+      }
       // since we use the same map_T_odom, we postdate it to avoid global plan to controller tf transform extrapolation.
       tf::StampedTransform map_T_odom_stamped(map_T_odom, ros::Time::now() + ros::Duration(0.5), "map", "odom");
       tf_broadcaster.sendTransform(map_T_odom_stamped);
