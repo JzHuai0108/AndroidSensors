@@ -230,12 +230,12 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_MoveBaseNati
     int count = 0;
     while (ros::ok()) {
         cancelGoalCheck(cancel_pub);
-        if (count == 50) {
+        /*if (count == 50) {
             move_base.clearLayerUnsafe("global_costmap/obstacle_layer");
             log("Movebase clearing costmaps!");
             count = 0;
         }
-        ++count;
+        ++count;*/
         ros::spinOnce();
         loop_rate.sleep();
     }

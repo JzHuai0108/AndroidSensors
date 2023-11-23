@@ -284,8 +284,8 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
         NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress());
         nodeConfiguration.setMasterUri(getMasterUri());
 
-        nodeMainExecutor.execute(locationPublisherNode, nodeConfiguration);
-        nodeMainExecutor.execute(imuPublisherNode, nodeConfiguration);
+//        nodeMainExecutor.execute(locationPublisherNode, nodeConfiguration);
+//        nodeMainExecutor.execute(imuPublisherNode, nodeConfiguration);
 
         onClick(null);
     }
