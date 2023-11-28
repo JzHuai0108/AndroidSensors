@@ -105,7 +105,8 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_FastLioNativ
   delete []argv;
 
   ros::NodeHandle nh;
-  std::shared_ptr<GSMWrap> gsm(new GSMWrap(nh));
+  int accum_frames = 2;
+  std::shared_ptr<GSMWrap> gsm(new GSMWrap(nh, accum_frames));
   std::string fn_path = pcdmap_path.substr(0, pcdmap_path.find_last_of('/')) + "/";
   gsm->LoadMap(fn_path);
   ros::Rate rate(30);
