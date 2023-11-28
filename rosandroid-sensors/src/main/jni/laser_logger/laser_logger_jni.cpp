@@ -94,11 +94,12 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_LaserLoggerN
    ros::Subscriber sub1 = nh.subscribe("/livox/lidar", 10, pointCloud2Callback);
    ros::Subscriber sub2 = nh.subscribe("/livox/imu", 1000, imuCallback);
 
-   ros::Rate loop_rate(15);
+   ros::Rate loop_rate(25);
    while (ros::ok()) {
        ros::spinOnce();
        loop_rate.sleep();
    }
+   bag.close();
    log("Exiting from laser logger JNI call.");
    return 0;
 }
@@ -106,7 +107,6 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_LaserLoggerN
 JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_LaserLoggerNativeNode_shutdown
   (JNIEnv *, jobject) {
     log("Shutting down laser logger native node.");
-    bag.close();
     ros::shutdown();
     return 0;
 }
