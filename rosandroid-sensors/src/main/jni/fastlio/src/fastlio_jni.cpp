@@ -105,11 +105,12 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_FastLioNativ
   delete []argv;
 
   ros::NodeHandle nh;
+  ros::Rate rate(30);
+  /* // comment out global localization for it's so slow.
   int accum_frames = 2;
   std::shared_ptr<GSMWrap> gsm(new GSMWrap(nh, accum_frames));
   std::string fn_path = pcdmap_path.substr(0, pcdmap_path.find_last_of('/')) + "/";
   gsm->LoadMap(fn_path);
-  ros::Rate rate(30);
 
   while (ros::ok()) {
     if (gsm->loc_status()) {
@@ -125,6 +126,7 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_FastLioNativ
   nh.setParam("/mapping/init_world_t_lidar", position);
   std::vector<double> qxyzw{map_T_lidar.pose.orientation.x, map_T_lidar.pose.orientation.y, map_T_lidar.pose.orientation.z, map_T_lidar.pose.orientation.w};
   nh.setParam("/mapping/init_world_qxyzw_lidar", qxyzw);
+  */
   nh.setParam("/pcdmap", pcdmap_path);
 
   bool locmode = false;
