@@ -86,6 +86,8 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
         // We use the global namespace for fastlio2.
         add(new Pair<String, String>("movebase_params/livox_ros_driver2_params.yaml", "/"));
         // We use the global namespace for livox ros driver2.
+        add(new Pair<String, String>("movebase_params/fast_csm_icp_params.yaml", "/"));
+        // We use the global namespace for fast csm icp.
     }};
 
     private ArrayList<ParameterLoaderNode.Resource> mOpenedResources = new ArrayList<>();
@@ -386,7 +388,7 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
     private String checkPointCloudPcdMap() {
         String extdir = getExternalFilesDir(
                 Environment.getDataDirectory().getAbsolutePath()).getAbsolutePath();
-        File mapFile = new File(extdir, "maps/map.pcd");
+        File mapFile = new File(extdir, "maps/map_0.25.pcd");
         // we do not copy the pgm here because the pgm from the apk is corrupt and unable to be loaded by the map_server.
         if (!mapFile.exists()) {
             Log.e(TAG, "Error cannot find point cloud map: " + mapFile.getAbsolutePath() +
@@ -427,9 +429,9 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
         }
         String burgerUrdf = extdir + "/turtlebot3_burger.urdf";
         File burgerUrdfFile = new File(burgerUrdf);
-        if (!burgerUrdfFile.exists()) {
+//        if (!burgerUrdfFile.exists()) {
             FileManager.copyAssetFile(getAssets(), "movebase_params/turtlebot3_burger.urdf", burgerUrdf);
-        }
+//        }
         return burgerUrdf;
     }
 
@@ -532,8 +534,11 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
 
         nodeConfiguration.setMasterUri(masterUri);
         nodeConfiguration.setNodeName(LivoxRosDriver2NativeNode.nodeName);
-        String hostip = "192.168.217.234";
-        String lidarip = "192.168.217.121";
+        // The IP address of eth0 of the android phone.
+        String hostip = "192.168.135.137"; // "192.168.217.234";
+        // the subnet of the IP address of eth0 of the android phone + .1xx
+        // where xx are the last two digits of the mid360 serial number.
+        String lidarip = "192.168.135.157"; // ""192.168.217.121";
         String userconfigpath = createLidarUserConfig(hostip, lidarip);
         String[] extraArgs = new String[1];
         extraArgs[0] = userconfigpath;

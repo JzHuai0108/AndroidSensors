@@ -191,6 +191,8 @@ public class MasterChooser extends AppCompatActivity {
     } catch (SocketException e) {
       throw new RosRuntimeException(e);
     }
+    LinearLayout advancedOptions = (LinearLayout) findViewById(R.id.advancedOptions);
+    advancedOptions.setVisibility(View.VISIBLE);
 
     // Fallback to previous behaviour when no interface is selected.
     selectedInterface = "";

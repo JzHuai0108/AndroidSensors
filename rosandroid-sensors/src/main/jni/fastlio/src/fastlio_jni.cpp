@@ -1,6 +1,7 @@
 
 #include <android/log.h>
 
+#include <chrono>
 #include <sstream>
 #include <ros/ros.h>
 #include <std_msgs/String.h>
@@ -55,6 +56,12 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
     return JNI_VERSION_1_6;
 }
 
+inline double time_inc_ms(std::chrono::high_resolution_clock::time_point &t_end,
+                std::chrono::high_resolution_clock::time_point &t_begin)
+{
+  return std::chrono::duration_cast<std::chrono::duration<double>>(t_end - t_begin).count() * 1000;
+}
+
 /*
  * Class:     org_ros_rosjava_tutorial_native_node_FastLioNativeNode
  * Method:    execute
@@ -106,11 +113,13 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_FastLioNativ
 
   ros::NodeHandle nh;
   ros::Rate rate(30);
-  /* // comment out global localization for it's so slow.
+  // comment out global localization for it's so slow.
+  auto              match_begin_csm       = std::chrono::high_resolution_clock::now();
   int accum_frames = 2;
   std::shared_ptr<GSMWrap> gsm(new GSMWrap(nh, accum_frames));
   std::string fn_path = pcdmap_path.substr(0, pcdmap_path.find_last_of('/')) + "/";
-  gsm->LoadMap(fn_path);
+  std::string pcdbasename = "map_0.1.pcd";
+  gsm->LoadMap(fn_path, pcdbasename);
 
   while (ros::ok()) {
     if (gsm->loc_status()) {
@@ -122,11 +131,13 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_FastLioNativ
     rate.sleep();
   }
   gsm.reset(); // remove the gsm node.
+  auto            match_end_csm = std::chrono::high_resolution_clock::now();
+  double delta_ms = time_inc_ms(match_end_csm, match_begin_csm);
+  log("Global scan matcher took %f ms", delta_ms);
   std::vector<double> position{map_T_lidar.pose.position.x, map_T_lidar.pose.position.y, map_T_lidar.pose.position.z};
   nh.setParam("/mapping/init_world_t_lidar", position);
   std::vector<double> qxyzw{map_T_lidar.pose.orientation.x, map_T_lidar.pose.orientation.y, map_T_lidar.pose.orientation.z, map_T_lidar.pose.orientation.w};
   nh.setParam("/mapping/init_world_qxyzw_lidar", qxyzw);
-  */
   nh.setParam("/pcdmap", pcdmap_path);
 
   bool locmode = false;
