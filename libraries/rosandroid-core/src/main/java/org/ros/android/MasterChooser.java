@@ -27,6 +27,7 @@ import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -34,23 +35,34 @@ import android.view.View;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+
+import org.apache.commons.io.IOUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.ros.exception.RosRuntimeException;
 import org.ros.internal.node.client.MasterClient;
 import org.ros.internal.node.xmlrpc.XmlRpcTimeoutException;
 import org.ros.namespace.GraphName;
 import org.ros.node.NodeConfiguration;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.net.Inet4Address;
+import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -117,6 +129,7 @@ public class MasterChooser extends AppCompatActivity {
 
   private String selectedInterface;
   private AutoCompleteTextView uriText;
+  private TextView ipnoteText;
   private Button connectButton;
   private LinearLayout connectionLayout;
 
@@ -143,12 +156,31 @@ public class MasterChooser extends AppCompatActivity {
     }
   }
 
+  public static String getIpAddress() {
+    // copied from https://www.reddit.com/r/AndroidStudio/comments/ulsvrw/android_studio_and_ethernet_get_ip_adress/
+    try {
+      for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); ((Enumeration) en).hasMoreElements();) {
+        NetworkInterface intf = en.nextElement();
+        for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements();) {
+          InetAddress inetAddress = enumIpAddr.nextElement();
+          if (!inetAddress.isLoopbackAddress() && inetAddress instanceof Inet4Address) {
+            return inetAddress.getHostAddress();
+          }
+        }
+      }
+    } catch (SocketException ex) {
+      ex.printStackTrace();
+    }
+    return null;
+  }
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.master_chooser);
     final Pattern uriPattern = RosURIPattern.URI;
     uriText = (AutoCompleteTextView) findViewById(R.id.master_chooser_uri);
+    ipnoteText = (TextView)findViewById(R.id.ip_note);
     connectButton = (Button) findViewById(R.id.master_chooser_ok);
     uriText.setThreshold(RosURIPattern.HTTP_PROTOCOL_LENGTH);
 
@@ -216,6 +248,32 @@ public class MasterChooser extends AppCompatActivity {
     uriText.setText(uri);
 
     connectionLayout = (LinearLayout) findViewById(R.id.connection_layout);
+    String ipnote = "Current host IP:";
+    ipnote += getIpAddress();
+
+    String extdir = getExternalFilesDir(
+            Environment.getDataDirectory().getAbsolutePath()).getAbsolutePath();
+    File configFile = new File(extdir, "MID360_config.json");
+    if (configFile.exists()) {
+      try {
+        InputStream is = new FileInputStream(configFile);
+        String jsonTxt = IOUtils.toString(is);
+        JSONObject json = new JSONObject(jsonTxt);
+        JSONObject mid360 = json.getJSONObject("MID360");
+        JSONObject hostnet = mid360.getJSONObject("host_net_info");
+        String hostip = hostnet.getString("point_data_ip");
+        JSONArray lidarconfigs = json.getJSONArray("lidar_configs");
+        JSONObject lidarconfig = lidarconfigs.getJSONObject(0);
+        String lidarip = lidarconfig.getString("ip");
+        ipnote += ". Previous host IP: " + hostip + ", lidar 0 IP: " + lidarip;
+      } catch (Exception e) {
+        ipnote += ". Exception in loading previous IP from " + configFile.getAbsolutePath();
+        e.printStackTrace();
+      }
+    } else {
+      ipnote += ". No previous IP record found.";
+    }
+    ipnoteText.setText(ipnote);
   }
 
   @Override

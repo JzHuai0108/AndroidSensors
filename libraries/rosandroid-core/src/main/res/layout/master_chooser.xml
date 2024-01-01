@@ -106,9 +106,15 @@
                 android:text="@string/new_private_master"
                 android:layout_weight="1"
                 android:visibility="visible"/>
-
         </LinearLayout>
 
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:text="@string/ip_note"
+            android:id="@+id/ip_note"
+            android:layout_gravity="center" />
     </LinearLayout>
 
     <Button

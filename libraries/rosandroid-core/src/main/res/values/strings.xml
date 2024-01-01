@@ -12,5 +12,5 @@
     <string name="select_interface">Select network interface</string>
     <string name="uri_text">Master URI:</string>
     <string name="connection_text">Trying to reach master&#8230;</string>
-
+    <string name="ip_note">IP notes:</string>
 </resources>
