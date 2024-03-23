@@ -26,7 +26,7 @@ obstacle_layer:
   pointcloud2:
     sensor_frame: base_scan
     data_type: PointCloud2
-    topic: /livox/lidar
+    topic: /cloud_lidar  # /livox/lidar
     marking: true
     clearing: true
     observation_persistence: 0.0

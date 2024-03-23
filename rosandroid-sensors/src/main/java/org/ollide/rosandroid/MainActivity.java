@@ -253,7 +253,7 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
         SensorManager sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         try {
             Sensor accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-            sensorManager.registerListener(imuPublisherNode.getAccelerometerListener(), accelerometer, SensorManager.SENSOR_DELAY_FASTEST);
+            sensorManager.registerListener(imuPublisherNode.getAccelerometerListener(), accelerometer, SensorManager.SENSOR_DELAY_GAME);
         } catch (NullPointerException e) {
             Log.e(TAG, e.toString());
             return;
@@ -262,7 +262,7 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
         SensorManager sensorManager1 = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         try {
             Sensor gyroscope = sensorManager1.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
-            sensorManager1.registerListener(imuPublisherNode.getGyroscopeListener(), gyroscope, SensorManager.SENSOR_DELAY_FASTEST);
+            sensorManager1.registerListener(imuPublisherNode.getGyroscopeListener(), gyroscope, SensorManager.SENSOR_DELAY_GAME);
         } catch (NullPointerException e) {
             Log.e(TAG, e.toString());
             return;
