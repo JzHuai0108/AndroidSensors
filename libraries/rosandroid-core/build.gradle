@@ -1,11 +1,10 @@
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 26
-    buildToolsVersion '27.0.3'
+    compileSdkVersion 31
 
     defaultConfig {
-        minSdkVersion 14
+        minSdkVersion 23
     }
 }
 
@@ -15,6 +14,8 @@ configurations {
     all {
         exclude module: 'com.springsource.org.apache.commons.logging'
         exclude module: 'httpclient'
+        all*.exclude module: 'appcompat-v7'
+        all*.exclude module: 'support-v4'
     }
 }
 
@@ -44,10 +45,8 @@ dependencies {
     api "org.ros.rosjava_bootstrap:message_generation:0.3.3"
     implementation "org.ros.rosjava_bootstrap:message_generation:0.3.3"
 
-    api 'com.android.support:appcompat-v7:26.1.0'
-    implementation 'com.android.support:appcompat-v7:26.1.0'
-//    api "com.google.guava:guava:21.0"
-//    implementation "com.google.guava:guava:21.0"
+    api 'androidx.appcompat:appcompat:1.4.1'
+    implementation 'androidx.appcompat:appcompat:1.4.1'
 
 //    api "org.jboss.netty:netty:3.2.10.Final"
 //    implementation "org.jboss.netty:netty:3.2.10.Final"
@@ -55,4 +54,5 @@ dependencies {
     // implementation for apache commons logging
     api 'commons-logging:commons-logging:1.2'
     implementation 'commons-logging:commons-logging:1.2'
+    implementation 'com.google.guava:guava:27.0.1-android'
 }

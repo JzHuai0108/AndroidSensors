@@ -7,14 +7,13 @@ configurations {
 }
 
 android {
-    compileSdkVersion 26
-    buildToolsVersion '27.0.3'
+    compileSdkVersion 31
 
     defaultConfig {
         applicationId "org.ollide.rosandroid"
         // Android 4.0+ http://dannyroa.com/2013/10/17/why-its-time-to-support-only-android-4-0-and-above
-        minSdkVersion 14
-        targetSdkVersion 26
+        minSdkVersion 23
+        targetSdkVersion 31
         versionCode 1
         versionName "1.0"
     }
@@ -44,7 +43,7 @@ dependencies {
     // External libraries
     implementation 'com.hoho.android:usb-serial-for-android:[0.2, 0.3)'
     // Android libraries
-    implementation 'com.android.support:support-v4:26.0.1'
+    implementation 'androidx.legacy:legacy-support-v4:1.0.0'
 }
 
 tasks.withType(JavaCompile) {
