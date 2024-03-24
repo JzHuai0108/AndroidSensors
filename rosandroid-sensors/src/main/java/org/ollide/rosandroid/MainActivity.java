@@ -30,12 +30,15 @@ import android.os.Environment;
 import android.util.Log;
 import android.util.Pair;
 import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import org.ros.address.InetAddressFactory;
+import org.ros.android.IPTool;
 import org.ros.android.RosActivity;
 import org.ros.helpers.ParameterLoaderNode;
 import org.ros.node.ConnectedNode;
@@ -63,7 +66,7 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 
-public class MainActivity extends RosActivity implements View.OnClickListener {
+public class MainActivity extends RosActivity {
     private static final String TAG = MainActivity.class.getSimpleName();
     static {
         System.loadLibrary("movebase_jni");
@@ -111,9 +114,11 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
     private ModuleStatusIndicator mRosParametersStatusIndicator;
     private ModuleStatusIndicator mRosNavigationStatusIndicator;
 
-    private EditText locationFrameIdView, imuFrameIdView;
     private TextView masterUriTextView;
-    Button applyB;
+
+    private AutoCompleteTextView lidaridText;
+
+//    Button applyB;
     boolean recording;
     private OnFrameIdChangeListener locationFrameIdListener, imuFrameIdListener;
 
@@ -126,6 +131,8 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
+
+        masterUriTextView = findViewById(R.id.tv_master_uri);
 
         locationFrameIdListener = new OnFrameIdChangeListener() {
             @Override
@@ -140,26 +147,21 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
             }
         };
 
-        locationFrameIdView = findViewById(R.id.et_location_frame_id);
-        imuFrameIdView = findViewById(R.id.et_imu_frame_id);
-        masterUriTextView = findViewById(R.id.tv_master_uri);
-
-        SharedPreferences sp = getSharedPreferences("SharedPreferences", MODE_PRIVATE);
-        locationFrameIdView.setText(sp.getString("locationFrameId", getString(R.string.default_location_frame_id)));
-        imuFrameIdView.setText(sp.getString("imuFrameId", getString(R.string.default_imu_frame_id)));
-
-        applyB = findViewById(R.id.b_apply);
-        applyB.setOnClickListener(this);
+//        applyB = findViewById(R.id.b_apply);
+//        applyB.setOnClickListener(this);
         mRosParametersStatusIndicator = new ModuleStatusIndicator(this, (ImageView) findViewById(R.id.is_config_ok_image));
         mRosNavigationStatusIndicator = new ModuleStatusIndicator(this, (ImageView) findViewById(R.id.is_navigation_ok_image));
 
-        Button button = (Button) findViewById(R.id.cancelgoalbutton);
-        button.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                cancelGoals();
-            }
-        });
-
+        lidaridText = (AutoCompleteTextView) findViewById(R.id.lidarid_input);
+        ArrayAdapter<String> idadapter  = new ArrayAdapter<String>(this, android.R.layout.list_content,
+                R.id.lidarid_input);
+        lidaridText.setAdapter(idadapter);
+        String extdir = getExternalFilesDir(
+                Environment.getDataDirectory().getAbsolutePath()).getAbsolutePath();
+        File configFile = new File(extdir, "MID360_config.json");
+        String prevLidarId = IPTool.getPreviousLidarId(configFile);
+        if (prevLidarId.length() > 0)
+            lidaridText.setText(prevLidarId);
         final Button logbutton = (Button) findViewById(R.id.logbutton);
         logbutton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -289,24 +291,13 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
 //        nodeMainExecutor.execute(locationPublisherNode, nodeConfiguration);
 //        nodeMainExecutor.execute(imuPublisherNode, nodeConfiguration);
 
-        onClick(null);
-    }
-
-    @Override
-    public void onClick(View view) {
-        Log.i(TAG, "Default IMU OnFrameIdChangedListener called");
 
         SharedPreferences sp = getSharedPreferences("SharedPreferences", MODE_PRIVATE);
         SharedPreferences.Editor spe = sp.edit();
-        String newLocationFrameId = locationFrameIdView.getText().toString();
-        if (!newLocationFrameId.isEmpty()) {
-            locationFrameIdListener.onFrameIdChanged(newLocationFrameId);
-            spe.putString("locationFrameId", newLocationFrameId);
-        }
-        String newImuFrameId = imuFrameIdView.getText().toString();
-        if (!newLocationFrameId.isEmpty()) {
-            imuFrameIdListener.onFrameIdChanged(newImuFrameId);
-            spe.putString("imuFrameId", newImuFrameId);
+        String lidarId = lidaridText.getText().toString();
+        if (!lidarId.isEmpty()) {
+            locationFrameIdListener.onFrameIdChanged(lidarId);
+            spe.putString("LidarId", lidarId);
         }
         spe.apply();
     }
@@ -535,10 +526,12 @@ public class MainActivity extends RosActivity implements View.OnClickListener {
         nodeConfiguration.setMasterUri(masterUri);
         nodeConfiguration.setNodeName(LivoxRosDriver2NativeNode.nodeName);
         // The IP address of eth0 of the android phone.
-        String hostip = "192.168.135.137"; // "192.168.217.234";
+        String hostip = IPTool.getHostEthernetIp();
         // the subnet of the IP address of eth0 of the android phone + .1xx
         // where xx are the last two digits of the mid360 serial number.
-        String lidarip = "192.168.135.157"; // ""192.168.217.121";
+
+        String lidarid = lidaridText.getText().toString();
+        String lidarip = IPTool.composeLidarIp(hostip, lidarid);
         String userconfigpath = createLidarUserConfig(hostip, lidarip);
         String[] extraArgs = new String[1];
         extraArgs[0] = userconfigpath;

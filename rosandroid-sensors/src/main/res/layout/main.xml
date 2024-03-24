@@ -5,52 +5,51 @@
     android:orientation="vertical"
     android:padding="4dp">
 
+<!--    <TextView-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:textAppearance="?android:attr/textAppearanceMedium"-->
+<!--        android:text="@string/label_location_frame_id"-->
+<!--        android:id="@+id/textView2"-->
+<!--        android:layout_gravity="center_horizontal"/>-->
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceMedium"
-        android:text="@string/label_location_frame_id"
-        android:id="@+id/textView2"
-        android:layout_gravity="center_horizontal"/>
+<!--    <EditText-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:id="@+id/et_location_frame_id"-->
+<!--        android:text="@string/default_location_frame_id"-->
+<!--        android:hint="@string/default_location_hint"-->
+<!--        android:inputType="text"/>-->
 
-    <EditText
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/et_location_frame_id"
-        android:text="@string/default_location_frame_id"
-        android:hint="@string/default_location_hint"
-        android:inputType="text"/>
+<!--    <TextView-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:textAppearance="?android:attr/textAppearanceMedium"-->
+<!--        android:text="@string/label_imu_frame_id"-->
+<!--        android:id="@+id/textView3"-->
+<!--        android:layout_gravity="center_horizontal"/>-->
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceMedium"
-        android:text="@string/label_imu_frame_id"
-        android:id="@+id/textView3"
-        android:layout_gravity="center_horizontal"/>
+<!--    <EditText-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:id="@+id/et_imu_frame_id"-->
+<!--        android:text="@string/default_imu_frame_id"-->
+<!--        android:layout_gravity="center_horizontal"-->
+<!--        android:hint="@string/default_imu_hint"-->
+<!--        android:inputType="text"/>-->
 
-    <EditText
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/et_imu_frame_id"
-        android:text="@string/default_imu_frame_id"
-        android:layout_gravity="center_horizontal"
-        android:hint="@string/default_imu_hint"
-        android:inputType="text"/>
+<!--    <Button-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:text="@string/apply"-->
+<!--        android:id="@+id/b_apply"-->
+<!--        android:layout_marginTop="4dp"/>-->
 
-    <Button
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/apply"
-        android:id="@+id/b_apply"
-        android:layout_marginTop="4dp"/>
-
-    <Button
-        android:id="@+id/cancelgoalbutton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Cancel Goals" />
+<!--    <Button-->
+<!--        android:id="@+id/cancelgoalbutton"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:text="Cancel Goals" />-->
 
     <Button
         android:id="@+id/logbutton"
@@ -85,6 +84,22 @@
         android:src="@drawable/ic_highlight_off_black_24dp" />
 
     <TextView
+        android:id="@+id/lidarid"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/lidar_id"
+        android:textSize="18dp"/>
+
+    <AutoCompleteTextView
+        android:id="@+id/lidarid_input"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/lidar_id_hint"
+        android:singleLine="true" >
+        <!--            <requestFocus/>-->
+    </AutoCompleteTextView>
+
+    <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceMedium"
@@ -96,13 +111,10 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceMedium"
-        android:text="Connect both the ubuntu and the android phone to the same local network.
-The android local IP address is given above. The ubuntu local IP can be found by ifconfig.
-Then in a ubuntu terminal, run \nexport ROS_MASTER_URI=http://192.168.2.134:11311 # android IP\n
-export ROS_IP=192.168.2.77 # ubuntu IP\n
-export ROS_HOSTNAME=192.168.2.77\n
-rostopic echo /imu_data\n
-Note replace the addresses accordingly. You should see a flow of IMU data."
+        android:text="@string/start_rviz_hint"
         android:id="@+id/help_android_roscore"
         android:layout_gravity="left"/>
+
+
+
 </LinearLayout>

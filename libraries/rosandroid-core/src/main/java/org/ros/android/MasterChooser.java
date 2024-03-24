@@ -156,23 +156,6 @@ public class MasterChooser extends AppCompatActivity {
     }
   }
 
-  public static String getIpAddress() {
-    // copied from https://www.reddit.com/r/AndroidStudio/comments/ulsvrw/android_studio_and_ethernet_get_ip_adress/
-    try {
-      for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); ((Enumeration) en).hasMoreElements();) {
-        NetworkInterface intf = en.nextElement();
-        for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements();) {
-          InetAddress inetAddress = enumIpAddr.nextElement();
-          if (!inetAddress.isLoopbackAddress() && inetAddress instanceof Inet4Address) {
-            return inetAddress.getHostAddress();
-          }
-        }
-      }
-    } catch (SocketException ex) {
-      ex.printStackTrace();
-    }
-    return null;
-  }
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -180,8 +163,9 @@ public class MasterChooser extends AppCompatActivity {
     setContentView(R.layout.master_chooser);
     final Pattern uriPattern = RosURIPattern.URI;
     uriText = (AutoCompleteTextView) findViewById(R.id.master_chooser_uri);
+
     ipnoteText = (TextView)findViewById(R.id.ip_note);
-    connectButton = (Button) findViewById(R.id.master_chooser_ok);
+//    connectButton = (Button) findViewById(R.id.master_chooser_ok);
     uriText.setThreshold(RosURIPattern.HTTP_PROTOCOL_LENGTH);
 
     ArrayAdapter<String> uriAdapter = new ArrayAdapter<>
@@ -194,11 +178,11 @@ public class MasterChooser extends AppCompatActivity {
         final String uri = s.toString();
         if(!uriPattern.matcher(uri).matches()) {
           uriText.setError("Please enter valid URI");
-          connectButton.setEnabled(false);
+//          connectButton.setEnabled(false);
         }
         else {
           uriText.setError(null);
-          connectButton.setEnabled(true);
+//          connectButton.setEnabled(true);
         }
       }
 
@@ -210,14 +194,14 @@ public class MasterChooser extends AppCompatActivity {
       public void afterTextChanged(Editable s) {
       }
     });
-
-    ListView interfacesList = (ListView) findViewById(R.id.networkInterfaces);
     final List<String> list = new ArrayList<String>();
 
     try {
       for (NetworkInterface networkInterface : Collections.list(NetworkInterface.getNetworkInterfaces())) {
         if (networkInterface.isUp() && !networkInterface.isLoopback()) {
-          list.add(networkInterface.getName());
+          String ifname = networkInterface.getName();
+          if (ifname.contains("wlan"))
+            list.add(ifname);
         }
       }
     } catch (SocketException e) {
@@ -229,16 +213,26 @@ public class MasterChooser extends AppCompatActivity {
     // Fallback to previous behaviour when no interface is selected.
     selectedInterface = "";
 
-    final StableArrayAdapter adapter = new StableArrayAdapter(this, android.R.layout.simple_list_item_1, list);
-    interfacesList.setAdapter(adapter);
+//    ListView interfacesList = (ListView) findViewById(R.id.networkInterfaces);
+//    final StableArrayAdapter interfaceAdapter = new StableArrayAdapter(this, android.R.layout.simple_list_item_1, list);
+//    interfacesList.setAdapter(interfaceAdapter);
+//    interfacesList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+//      @Override
+//      public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+//        selectedInterface = parent.getItemAtPosition(position).toString();
+//        toast("Using " + selectedInterface + " interface.");
+//      }
+//    });
 
-    interfacesList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-      @Override
-      public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        selectedInterface = parent.getItemAtPosition(position).toString();
-        toast("Using " + selectedInterface + " interface.");
-      }
-    });
+    if (list.size() == 0) {
+      toast("Unable to find a WLAN interface for the ROS master.");
+    } else if (list.size() == 1) {
+      selectedInterface = list.get(0);
+      toast("Using " + selectedInterface + " interface.");
+    } else {
+      selectedInterface = list.get(0);
+      toast("Using the 1st " + selectedInterface + " interface out of " + list.size() + " WLANs.");
+    }
 
     // Get the URI from preferences and display it. Since only primitive types
     // can be saved in preferences the URI is stored as a string.
@@ -247,9 +241,11 @@ public class MasterChooser extends AppCompatActivity {
             NodeConfiguration.DEFAULT_MASTER_URI.toString());
     uriText.setText(uri);
 
-    connectionLayout = (LinearLayout) findViewById(R.id.connection_layout);
-    String ipnote = "Current host IP:";
-    ipnote += getIpAddress();
+//    connectionLayout = (LinearLayout) findViewById(R.id.connection_layout);
+    String currentHostIp = IPTool.getHostEthernetIp();
+    String ipnote = new String();
+//    ipnote += "Current host IP:";
+//    ipnote += currentHostIp;
 
     String extdir = getExternalFilesDir(
             Environment.getDataDirectory().getAbsolutePath()).getAbsolutePath();
@@ -265,7 +261,20 @@ public class MasterChooser extends AppCompatActivity {
         JSONArray lidarconfigs = json.getJSONArray("lidar_configs");
         JSONObject lidarconfig = lidarconfigs.getJSONObject(0);
         String lidarip = lidarconfig.getString("ip");
-        ipnote += ". Previous host IP: " + hostip + ", lidar 0 IP: " + lidarip;
+//        ipnote += ". Previous host IP: " + hostip + ", lidar 0 IP: " + lidarip;
+        if (!hostip.equals(currentHostIp)) {
+          ipnote += "Warning: The host address and lidar address are on different network segments, " +
+                  "the host_ip: " + currentHostIp + ", previous lidar_ip: " + lidarip;
+          ipnote += "\nTo fix this, open livox viewer2 in a laptop, connect to mid360 by " +
+                  "setting the laptop ethernet static IP to: " + hostip;
+
+          String[] hostparts = currentHostIp.split("[.]");
+          String subnet = hostparts[2];
+          String[] lidarparts = lidarip.split("[.]");
+          String lidarid = lidarparts[3];
+          ipnote += "\nThen in livox viewer2 settings, set the lidar IP to 192.168." + subnet + "." + lidarid;
+          ipnote += "\nAlso, set the points IP, IMU IP, and lidar info IP to " + currentHostIp;
+        }
       } catch (Exception e) {
         ipnote += ". Exception in loading previous IP from " + configFile.getAbsolutePath();
         e.printStackTrace();
@@ -278,6 +287,7 @@ public class MasterChooser extends AppCompatActivity {
 
   @Override
   public void onActivityResult(int requestCode, int resultCode, Intent intent) {
+    super.onActivityResult(requestCode, resultCode, intent);
     // If the Barcode Scanner returned a string then display that string.
     if (requestCode == 0) {
       if (resultCode == RESULT_OK) {

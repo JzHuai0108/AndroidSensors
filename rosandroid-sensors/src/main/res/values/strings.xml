@@ -13,5 +13,15 @@
     <string name="default_imu_hint">Default IMU frame ID</string>
     <string name="start_logging">Start logging laser scans</string>
     <string name="stop_logging">Stop Logging</string>
-
+    <string name="lidar_id">Lidar ID:</string>
+    <string name="lidar_id_hint">1xx (xx=mid360 serial number\'s\nlast 2 digits)</string>
+    <string name="start_rviz_hint">Connect both the ubuntu and the android phone to the
+        same local network. The android local IP address is given above.
+        The ubuntu local IP can be found by ifconfig.
+        Then in a ubuntu terminal, run\n
+        export ROS_MASTER_URI=http://192.168.IP.Android:11311\n
+        export ROS_IP=192.168.IP.Ubuntu\n
+        export ROS_HOSTNAME=192.168.IP.Ubuntu\n
+        rostopic echo /imu_data\n
+        Note replace the addresses accordingly.</string>
 </resources>
