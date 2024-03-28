@@ -27,7 +27,7 @@ public class LivoxRosDriver2NativeNode extends NativeNodeMain {
     protected native int execute(String rosMasterUri, String rosHostname, String rosNodeName, String[] remappingArguments);
 
     @Override
-    protected native int shutdown();
+    public native int shutdown();
 
     @Override
     public void onStart(ConnectedNode connectedNode) {

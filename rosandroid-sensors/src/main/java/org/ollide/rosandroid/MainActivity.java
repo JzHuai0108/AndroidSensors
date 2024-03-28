@@ -27,6 +27,8 @@ import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.util.Pair;
 import android.view.View;
@@ -115,11 +117,15 @@ public class MainActivity extends RosActivity {
     private ModuleStatusIndicator mRosNavigationStatusIndicator;
 
     private TextView masterUriTextView;
+    private TextView statusTextView;
+    private TextView positionTextView;
 
     private AutoCompleteTextView lidaridText;
 
 //    Button applyB;
-    boolean recording;
+    boolean navigating = false;
+    boolean recording = false;
+
     private OnFrameIdChangeListener locationFrameIdListener, imuFrameIdListener;
 
     public MainActivity() {
@@ -133,6 +139,8 @@ public class MainActivity extends RosActivity {
         setContentView(R.layout.main);
 
         masterUriTextView = findViewById(R.id.tv_master_uri);
+        statusTextView = findViewById(R.id.tv_status);
+        positionTextView = findViewById(R.id.tv_position);
 
         locationFrameIdListener = new OnFrameIdChangeListener() {
             @Override
@@ -156,13 +164,44 @@ public class MainActivity extends RosActivity {
         ArrayAdapter<String> idadapter  = new ArrayAdapter<String>(this, android.R.layout.list_content,
                 R.id.lidarid_input);
         lidaridText.setAdapter(idadapter);
+        lidaridText.addTextChangedListener(new TextWatcher() {
+
+                    @Override
+                    public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+                    }
+
+                    @Override
+                    public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+                    }
+
+                    @Override
+                    public void afterTextChanged(Editable s) {
+                        Log.i(TAG, "Current lidar ip: " + lidaridText.getText().toString());
+                    }
+                });
         String extdir = getExternalFilesDir(
                 Environment.getDataDirectory().getAbsolutePath()).getAbsolutePath();
         File configFile = new File(extdir, "MID360_config.json");
         String prevLidarId = IPTool.getPreviousLidarId(configFile);
         if (prevLidarId.length() > 0)
             lidaridText.setText(prevLidarId);
-        final Button logbutton = (Button) findViewById(R.id.logbutton);
+        final Button navbutton = (Button)findViewById(R.id.navbutton);
+        navbutton.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                if (navigating) {
+                    stopNavigation();
+                    navbutton.setText(R.string.start_navigation);
+                } else {
+                    startNavigation();
+                    navbutton.setText(R.string.stop_navigation);
+                }
+                navigating = !navigating;
+            }
+          }
+        );
+        final Button logbutton = (Button)findViewById(R.id.logbutton);
         logbutton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 if (recording) {
@@ -173,6 +212,15 @@ public class MainActivity extends RosActivity {
                     logbutton.setText(R.string.stop_logging);
                 }
                 recording = !recording;
+            }
+        });
+
+        final Button exitbutton = (Button) findViewById(R.id.exitbutton);
+        exitbutton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                finish();
+                System.exit(0);
             }
         });
 
@@ -201,12 +249,6 @@ public class MainActivity extends RosActivity {
 
         Log.i(TAG, "Master URI: " + masterUri.toString());
         configureParameterServer();
-//        startAmcl();
-//        startLsm();
-        startLivoxRosDriver2();
-        startFastLio();
-//        startPathListener();
-        startMoveBase();
 
         final LocationPublisherNode locationPublisherNode = new LocationPublisherNode();
         ImuPublisherNode imuPublisherNode = new ImuPublisherNode();
@@ -300,6 +342,19 @@ public class MainActivity extends RosActivity {
             spe.putString("LidarId", lidarId);
         }
         spe.apply();
+    }
+
+    public void startNavigation() {
+//        startAmcl();
+//        startLsm();
+        startLivoxRosDriver2();
+        startFastLio();
+        startPathListener();
+        startMoveBase();
+    }
+
+    public void stopNavigation() {
+        nodeMainExecutor.shutdown();
     }
 
     @Override
@@ -533,6 +588,7 @@ public class MainActivity extends RosActivity {
         String lidarid = lidaridText.getText().toString();
         String lidarip = IPTool.composeLidarIp(hostip, lidarid);
         String userconfigpath = createLidarUserConfig(hostip, lidarip);
+        Log.i(TAG, "host ip:" + hostip + ", lidar ip:" + lidarip);
         String[] extraArgs = new String[1];
         extraArgs[0] = userconfigpath;
         livoxNativeNode = new LivoxRosDriver2NativeNode(extraArgs);
@@ -547,6 +603,23 @@ public class MainActivity extends RosActivity {
         nodeConfiguration.setNodeName(PathListenerNode.nodeName);
 
         pathListenerNode = new PathListenerNode();
+        pathListenerNode.setOnNewsUpdateListener(
+                new NewsUpdateListener() {
+                    @Override
+                    public void onNewsUpdate(double x, double y, double z) {
+                        runOnUiThread(
+                                new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        String s = "Odometry: " + String.format("%.2f", x) + "," +
+                                                String.format("%.2f", y) + "," + String.format("%.2f", z);
+                                        positionTextView.setText(s);
+                                    }
+                                }
+                        );
+                    }
+                }
+        );
         nodeMainExecutor.execute(pathListenerNode, nodeConfiguration);
     }
 
@@ -568,7 +641,7 @@ public class MainActivity extends RosActivity {
     }
 
     private void stopLaserLogging() {
-        laserLoggerNativeNode.shutdown();
+        int pcmsgCount = laserLoggerNativeNode.shutdown();
+        statusTextView.setText("Recorded " + pcmsgCount + " point clouds.");
     }
-
 }

@@ -52,6 +52,12 @@
 <!--        android:text="Cancel Goals" />-->
 
     <Button
+        android:id="@+id/navbutton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/start_navigation" />
+
+    <Button
         android:id="@+id/logbutton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -115,6 +121,33 @@
         android:id="@+id/help_android_roscore"
         android:layout_gravity="left"/>
 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="Message:"
+        android:id="@+id/tv_status"
+        android:layout_gravity="left"/>
 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="Current position:"
+        android:id="@+id/position"
+        android:layout_gravity="left"/>
 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="0,0"
+        android:id="@+id/tv_position"
+        android:layout_gravity="left"/>
+
+    <Button
+        android:id="@+id/exitbutton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/exit_ros" />
 </LinearLayout>

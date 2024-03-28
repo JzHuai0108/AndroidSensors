@@ -12,7 +12,10 @@
     <string name="default_location_hint">Default location frame ID</string>
     <string name="default_imu_hint">Default IMU frame ID</string>
     <string name="start_logging">Start logging laser scans</string>
+    <string name="start_navigation">Start navigation</string>
+    <string name="stop_navigation">Stop navigation</string>
     <string name="stop_logging">Stop Logging</string>
+    <string name="exit_ros">Exit</string>
     <string name="lidar_id">Lidar ID:</string>
     <string name="lidar_id_hint">1xx (xx=mid360 serial number\'s\nlast 2 digits)</string>
     <string name="start_rviz_hint">Connect both the ubuntu and the android phone to the

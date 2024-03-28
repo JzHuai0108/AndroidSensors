@@ -31,7 +31,7 @@ public class MoveBaseNativeNode extends NativeNodeMain {
     protected native int execute(String rosMasterUri, String rosHostname, String rosNodeName, String[] remappingArguments);
 
     @Override
-    protected native int shutdown();
+    public native int shutdown();
 
     public native void setCancelGoals();
 

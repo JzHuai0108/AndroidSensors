@@ -27,16 +27,20 @@ inline std::string stdStringFromjString(JNIEnv *env, jstring java_string) {
 }
 
 rosbag::Bag bag;
+int pcmsgCount = 0;
+int imumsgCount = 0;
 void laserScanCallback(const sensor_msgs::LaserScan::ConstPtr& msg) {
     bag.write("/scan", msg->header.stamp, msg);
 }
 
 void pointCloud2Callback(const sensor_msgs::PointCloud2::ConstPtr& msg) {
     bag.write("/livox/lidar", msg->header.stamp, msg);
+    pcmsgCount++;
 }
 
 void imuCallback(const sensor_msgs::Imu::ConstPtr& msg) {
     bag.write("/livox/imu", msg->header.stamp, msg);
+    imumsgCount++;
 }
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
@@ -88,7 +92,8 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_LaserLoggerN
    delete []argv;
 
    ros::NodeHandle nh;
-
+   pcmsgCount = 0;
+   imumsgCount = 0;
    bag.open(bagpath, rosbag::bagmode::Write);
    // ros::Subscriber sub = nh.subscribe("/scan", 100, laserScanCallback);
    ros::Subscriber sub1 = nh.subscribe("/livox/lidar", 10, pointCloud2Callback);
@@ -108,5 +113,5 @@ JNIEXPORT jint JNICALL Java_org_ros_rosjava_1tutorial_1native_1node_LaserLoggerN
   (JNIEnv *, jobject) {
     log("Shutting down laser logger native node.");
     ros::shutdown();
-    return 0;
+    return pcmsgCount;
 }
