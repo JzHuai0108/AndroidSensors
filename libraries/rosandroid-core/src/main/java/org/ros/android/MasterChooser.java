@@ -200,8 +200,7 @@ public class MasterChooser extends AppCompatActivity {
       for (NetworkInterface networkInterface : Collections.list(NetworkInterface.getNetworkInterfaces())) {
         if (networkInterface.isUp() && !networkInterface.isLoopback()) {
           String ifname = networkInterface.getName();
-          if (ifname.contains("wlan"))
-            list.add(ifname);
+          list.add(ifname);
         }
       }
     } catch (SocketException e) {
@@ -213,26 +212,28 @@ public class MasterChooser extends AppCompatActivity {
     // Fallback to previous behaviour when no interface is selected.
     selectedInterface = "";
 
-//    ListView interfacesList = (ListView) findViewById(R.id.networkInterfaces);
-//    final StableArrayAdapter interfaceAdapter = new StableArrayAdapter(this, android.R.layout.simple_list_item_1, list);
-//    interfacesList.setAdapter(interfaceAdapter);
-//    interfacesList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-//      @Override
-//      public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-//        selectedInterface = parent.getItemAtPosition(position).toString();
-//        toast("Using " + selectedInterface + " interface.");
-//      }
-//    });
+    ListView interfacesList = (ListView) findViewById(R.id.networkInterfaces);
+    final StableArrayAdapter interfaceAdapter = new StableArrayAdapter(this, android.R.layout.simple_list_item_1, list);
+    interfacesList.setAdapter(interfaceAdapter);
+    interfacesList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+      @Override
+      public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+        selectedInterface = parent.getItemAtPosition(position).toString();
+        toast("Using " + selectedInterface + " interface.");
+      }
+    });
+    // If you want to debug with rviz, then use wlan0.
+    // If to release the product, then use eth0 as it does not need wireless network.
 
-    if (list.size() == 0) {
-      toast("Unable to find a WLAN interface for the ROS master.");
-    } else if (list.size() == 1) {
-      selectedInterface = list.get(0);
-      toast("Using " + selectedInterface + " interface.");
-    } else {
-      selectedInterface = list.get(0);
-      toast("Using the 1st " + selectedInterface + " interface out of " + list.size() + " WLANs.");
-    }
+//    if (list.size() == 0) {
+//      toast("Unable to find a WLAN interface for the ROS master.");
+//    } else if (list.size() == 1) {
+//      selectedInterface = list.get(0);
+//      toast("Using " + selectedInterface + " interface.");
+//    } else {
+//      selectedInterface = list.get(0);
+//      toast("Using the 1st " + selectedInterface + " interface out of " + list.size() + " WLANs.");
+//    }
 
     // Get the URI from preferences and display it. Since only primitive types
     // can be saved in preferences the URI is stored as a string.
@@ -276,11 +277,11 @@ public class MasterChooser extends AppCompatActivity {
           ipnote += "\nAlso, set the points IP, IMU IP, and lidar info IP to " + currentHostIp;
         }
       } catch (Exception e) {
-        ipnote += ". Exception in loading previous IP from " + configFile.getAbsolutePath();
+        ipnote += "Exception in loading previous IP from " + configFile.getAbsolutePath();
         e.printStackTrace();
       }
     } else {
-      ipnote += ". No previous IP record found.";
+      ipnote += "No previous IP record found.";
     }
     ipnoteText.setText(ipnote);
   }

@@ -379,7 +379,7 @@ public class MainActivity extends RosActivity {
     private String checkPointCloudPcdMap() {
         String extdir = getExternalFilesDir(
                 Environment.getDataDirectory().getAbsolutePath()).getAbsolutePath();
-        File mapFile = new File(extdir, "maps/map_0.25.pcd");
+        File mapFile = new File(extdir, "maps/map_0.1.pcd");
         // we do not copy the pgm here because the pgm from the apk is corrupt and unable to be loaded by the map_server.
         if (!mapFile.exists()) {
             Log.e(TAG, "Error cannot find point cloud map: " + mapFile.getAbsolutePath() +
